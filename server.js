@@ -17,7 +17,7 @@ const config = {
         port: 80,
         session: {
             name: 'SRIP',
-            secret: 'mysecret',
+            secret: 'auggie',
             requireHTTPS: false,
 
             // 0 = infinite
@@ -30,8 +30,8 @@ const config = {
     },
     oauth2: {
         name: 'Google',
-        clientID: "ID HERE",
-        clientSecret: "SECRET HERE",
+        clientID: "CLIENTID",
+        clientSecret: "SECRET",
         callbackURL: "/google/callback"
     }
 }
