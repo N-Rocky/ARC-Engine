@@ -1,20 +1,11 @@
 * {
     /* CSS Variables */
-    --primary: rgb(80, 80, 80);
+    --primary: rgb(42, 75, 87);
     --secondary: rgb(255 148 70);
     --highlight: rgb(0, 255, 240);
     --fontColor: rgb(0, 0, 0);
     --windowColor: rgb(42, 75, 87);
     --terminalColor: rgb(25, 45, 50);
-    /*
-        --backgroundColor: rgb(80, 80, 80);
-        --borderColor: rgb(0, 255, 180);
-        --fontColor: rgb(0, 0, 0);
-        --windowColor: rgb(42, 75, 87);
-        --componentColor: rgb(255 148 70);
-        --terminalColor: rgb(25, 45, 50);
-    */
-
     padding: 0;
     margin: 0;
     box-sizing: border-box;
@@ -30,7 +21,33 @@ body {
     width: 100dvw;
     height: 100dvh;
     display: flex;
-    flex-direction: row;
+}
+
+.header {
+    display: flex;
+    width: 90dvh;
+    justify-content: center;
+    align-items: center;
+    margin: 20px;
+    padding: 5dvh;
+    background-color: var(--secondary);
+    border-radius: 20px;
+    text-align: center;
+    font-size: 350%;
+}
+.link {
+    display: flex;
+    width: 90dvh;
+    justify-content: center;
+    align-items: center;
+    margin: 10px;
+    padding: 1dvh;
+    background-color: var(--highlight);
+    border: 5px solid var(--secondary);
+    border-radius: 30px;
+    text-align: center;
+    font-size: 200%;
+    text-decoration: none;
 }
 
 #game {

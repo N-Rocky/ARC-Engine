@@ -1,4 +1,4 @@
-# (Untitled) Game Engine
+# ARC-Engine Design Document
 
 > ### Layout Design
 > - Inspector. Changes based on selected object, but always contains a transform component that updates the position of the selected object (two textboxes for x and y values).

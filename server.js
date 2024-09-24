@@ -12,29 +12,7 @@ const { v4: uuidv4 } = require('uuid');
 let clients = {};
 
 // Server Config and OAuth Strategy
-const config = {
-    app: {
-        port: 80,
-        session: {
-            name: 'SRIP',
-            secret: 'auggie',
-            requireHTTPS: false,
-
-            // 0 = infinite
-            maxAge: 1000 * 60 * 60 * 24
-        },
-        proxy: {
-            trust: true,
-            ips: []
-        }
-    },
-    oauth2: {
-        name: 'Google',
-        clientID: "CLIENTID",
-        clientSecret: "SECRET",
-        callbackURL: "/google/callback"
-    }
-}
+const config = require('./config.js').config;
 
 // Session info
 const sessionStore = new session.MemoryStore();
