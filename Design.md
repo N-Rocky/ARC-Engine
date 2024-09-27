@@ -3,6 +3,9 @@
 > ### Layout Design
 > - Inspector. Changes based on selected object, but always contains a transform component that updates the position of the selected object (two textboxes for x and y values).
 > - Taskbar. Holds all user generated data, including assets and every object created in the game window.
+> - Taskbar displays folders for each type of asset. Clicking on a folder displays all assets of that type. Always open.
+> - Gizmos display to show selected object and allow for easier transformation of object's position, rotation, and scale.
+> - Home page should have icon top left, login and browse top right, and project statement center left with logo on right.
 
 > ### Inspector
 > - Identity. Allows users to change the name of the object that can later be referenced by other objects through their behavior. Users can also set and create tags here for use with trigger colliders.

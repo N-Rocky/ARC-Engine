@@ -319,7 +319,7 @@ class Entity { // Basis of every game object
         this.static = false;
         this.gravity = false;
         this.mass = 2;
-        this.elasticity = 2;
+        this.elasticity = 0.6;
         this.velocity = new Vector2();
         this.acceleration = new Vector2();
         this.tag = "Default";
