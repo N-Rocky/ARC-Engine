@@ -218,7 +218,7 @@ class Logic {
         }
     }
 
-    async LoadAssets() {
+    async LoadAssets() { // Loading all asset files from the datatbase
         let projectID = window.location.href.split("/");
         projectID = projectID[projectID.length - 1];
 
@@ -231,25 +231,37 @@ class Logic {
             })
         }).then((res) => res.json()).then((res) => data = res);
 
-        const files = document.getElementById("files");
-        while (files.firstChild) {
-            files.removeChild(files.lastChild);
-        }
-        for (let file of data.files) {
-            let element = document.createElement("a");
-            element.classList.add("file");
-
-            element.style.backgroundImage = `url('${projectID}/file/${file}')`;
-            element.addEventListener("click", () => {
-                if (this.#selectedEntity != -1) {
-                    let entity = this.#sceneEntities[this.#selectedEntity]
-                    entity.source = file;
-                    scene.stage.removeChild(entity.renderer);
-                    entity.LoadRenderer();
+        for (let folder of ["images", "audio"]) { // Load each asset collection
+            const displayFiles = document.getElementById(folder);
+            while (displayFiles.firstChild) {
+                displayFiles.removeChild(displayFiles.lastChild);
+            }
+            for (let file of data.files) {
+                if (folder == "images" && [".png", ".jpg", "jpeg"].includes(file.slice(-4))) {
+                    let element = document.createElement("a"); element.classList.add("file");
+                    element.style.backgroundImage = `url('${projectID}/file/${file}')`;
+                    element.addEventListener("click", () => {
+                        if (this.#selectedEntity != -1) {
+                            let entity = this.#sceneEntities[this.#selectedEntity];
+                            entity.source = file;
+                            scene.stage.removeChild(entity.renderer);
+                            entity.LoadRenderer();
+                        }
+                    });
+                    displayFiles.appendChild(element);
                 }
-            });
-
-            files.appendChild(element);
+                else if (folder == "audio" && [".mp3", ".wav"].includes(file.slice(-4))) {
+                    let element = document.createElement("a"); element.classList.add("file");
+                    element.style.backgroundImage = `url('/Assets/Images/DefaultAudio.png')`;
+                    element.addEventListener("click", () => {
+                        if (this.#selectedEntity != -1) {
+                            let entity = this.#sceneEntities[this.#selectedEntity];
+                            // AUDIO Behavior
+                        }
+                    });
+                    displayFiles.appendChild(element);
+                }
+            }
         }
     }
 

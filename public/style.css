@@ -91,8 +91,7 @@ input[type="file"] {
     align-items: center;
     margin-top: auto;
     width: 15%;
-    height: 0%;
-    opacity: 0%;
+    height: 100%;
     transition: 0.2s;
     font-size: 500%;
     border-top-left-radius: 20px;
@@ -100,14 +99,13 @@ input[type="file"] {
     background-color: var(--secondary);
     box-shadow: rgba(0, 0, 0, 0.5) 0px -8px 10px;
 }
-#files {
+.files {
     display: inline-grid;
     grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
     grid-template-rows: auto;
     margin-top: auto;
     width: 85%;
-    height: 0%;
-    opacity: 0%;
+    height: 100%;
     transition: 0.2s;
 }
 .file {

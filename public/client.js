@@ -246,14 +246,6 @@ document.getElementById("scene").onmouseup = (event) => { // Left click release 
             element.style.flexGrow = "1";
         }
 
-        let fileSelector = document.getElementById("fileSelector");
-        fileSelector.style.opacity = "100%";
-        fileSelector.style.height = "100%";
-
-        let files = document.getElementById("files");
-        files.style.opacity = "100%";
-        files.style.height = "100%";
-
         let entity = logic.sceneEntities[logic.selectedEntity];
         document.getElementById("xInput").value = Math.floor(entity.position.x);
         document.getElementById("xSlider").value = Math.floor(entity.position.x);
@@ -282,14 +274,6 @@ document.getElementById("scene").onmouseup = (event) => { // Left click release 
             element.style.width = "0%";
             element.style.flexGrow = "0";
         }
-
-        let fileSelector = document.getElementById("fileSelector");
-        fileSelector.style.opacity = "0%";
-        fileSelector.style.height = "0%";
-
-        let files = document.getElementById("files");
-        files.style.opacity = "0%";
-        files.style.height = "0%";
     }
 }
 document.getElementById("scene").oncontextmenu = (event) => { // Right click

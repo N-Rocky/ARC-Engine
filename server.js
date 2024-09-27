@@ -118,9 +118,9 @@ app.post("/new", (req, res) => { // Creating a new project in the database
 
     // Assets folder, config file, and scene file
     fs.mkdirSync(`./Database/${id}/${projectID}/Assets`);
-    fs.copyFile("public/Assets/Sprites/Square.png", `./Database/${id}/${projectID}/Assets/Square.png`, (error) => { } );
-    fs.copyFile("public/Assets/Sprites/Circle.png", `./Database/${id}/${projectID}/Assets/Circle.png`, (error) => { } );
-    fs.copyFile("public/Assets/Sprites/Triangle.png", `./Database/${id}/${projectID}/Assets/Triangle.png`, (error) => { } );
+    fs.copyFile("public/Assets/Images/Square.png", `./Database/${id}/${projectID}/Assets/Square.png`, (error) => { } );
+    fs.copyFile("public/Assets/Images/Circle.png", `./Database/${id}/${projectID}/Assets/Circle.png`, (error) => { } );
+    fs.copyFile("public/Assets/Images/Triangle.png", `./Database/${id}/${projectID}/Assets/Triangle.png`, (error) => { } );
     let config = { name: req.body.name, description: req.body.description };
     fs.writeFileSync(`./Database/${id}/${projectID}/config.json`, JSON.stringify(config));
     fs.writeFileSync(`./Database/${id}/${projectID}/scene.json`, JSON.stringify({ entities: [] }));
