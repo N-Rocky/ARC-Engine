@@ -79,7 +79,7 @@ app.get(provider.callbackURL,
             }
         }
 
-        console.log("Clients: " + JSON.stringify(clients));
+        //console.log("Clients: " + JSON.stringify(clients));
         res.redirect(`/profile`);
     }
 );
@@ -118,12 +118,13 @@ app.post("/new", (req, res) => { // Creating a new project in the database
 
     // Assets folder, config file, and scene file
     fs.mkdirSync(`./Database/${id}/${projectID}/Assets`);
-    fs.copyFile("public/Assets/Images/Square.png", `./Database/${id}/${projectID}/Assets/Square.png`, (error) => { } );
-    fs.copyFile("public/Assets/Images/Circle.png", `./Database/${id}/${projectID}/Assets/Circle.png`, (error) => { } );
-    fs.copyFile("public/Assets/Images/Triangle.png", `./Database/${id}/${projectID}/Assets/Triangle.png`, (error) => { } );
-    let config = { name: req.body.name, description: req.body.description };
     fs.writeFileSync(`./Database/${id}/${projectID}/config.json`, JSON.stringify(config));
     fs.writeFileSync(`./Database/${id}/${projectID}/scene.json`, JSON.stringify({ entities: [] }));
+
+    // Create Asset subfolders based on public subfolders
+    for (let folder of fs.readdirSync(`./public/Assets`)) {
+        fs.mkdirSync(`./Database/${id}/${projectID}/Assets/${folder}`);
+    }
 
     let data = { name: req.user.displayName, projects: {} };
     for (let project in clients[id]) {
@@ -158,7 +159,15 @@ app.post("/files", (req, res) => { // Request list of files in the database
     if (!req.user) { res.redirect('/'); }
     const id = req.user.emails[0].value;
 
-    const files = fs.readdirSync(`./Database/${id}/${req.body.projectID}/Assets`);
+    let files = {};
+    const folders = fs.readdirSync(`./Database/${id}/${req.body.projectID}/Assets`);
+    for (let folder of folders) {
+        files[folder] = fs.readdirSync(`./Database/${id}/${req.body.projectID}/Assets/${folder}`);
+        for (let file of fs.readdirSync(`./public/Assets/${folder}`)) {
+            files[folder].push(file); // Add public files
+        }
+    }
+
     res.send(JSON.stringify({ files: files }));
 });
 
@@ -167,18 +176,36 @@ app.post("/project/:projectID/upload", (req, res) => { // Upload assets to the d
     const id = req.user.emails[0].value;
 
     let asset = req.files.file;
-    asset.mv(`./Database/${id}/${req.params.projectID}/Assets/` + asset.name, function (err) {
-        if (err) { console.log(err); } else { console.log("Asset Uploaded"); }
-    });
+
+    let fileType = null;
+    if ([".png", ".jpg", "jpeg"].includes(asset.name.slice(-4))) { // Supported Images
+        fileType = "Images";
+    }
+    else if ([".mp3", ".wav"].includes(asset.name.slice(-4))) { // Supported Audio
+        fileType = "Audio"
+    }
+
+    if (fileType != null) { // Uploaded a supported file type
+        asset.mv(`./Database/${id}/${req.params.projectID}/Assets/${fileType}/${asset.name}`, function (err) {
+            if (err) { console.log(err); } else { console.log("Asset Uploaded"); }
+        });
+    }
 
     res.end();
 });
 
-app.get("/project/:projectID/file/:fileName", (req, res) => { // Request a file from the database
+app.get("/project/:projectID/file/:folder/:file", (req, res) => { // Request a file from the database
     if (!req.user) { res.redirect('/'); }
     const id = req.user.emails[0].value;
 
-    res.sendFile(`./Database/${id}/${req.params.projectID}/Assets/${req.params.fileName}`, { root: __dirname });
+    for (let file of fs.readdirSync(`./public/Assets/${req.params.folder}`)) { // Search in public
+        if (file == req.params.file) {
+            res.sendFile(`public/Assets/${req.params.folder}/${file}`, { root: __dirname });
+            return;
+        }
+    }
+
+    res.sendFile(`./Database/${id}/${req.params.projectID}/Assets/${req.params.folder}/${req.params.file}`, { root: __dirname });
 });
 
 app.get("/test", (req, res) => { // Send the engine over (no requirements)

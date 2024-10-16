@@ -99,7 +99,7 @@ input[type="file"] {
     background-color: var(--secondary);
     box-shadow: rgba(0, 0, 0, 0.5) 0px -8px 10px;
 }
-.files {
+#files {
     display: inline-grid;
     grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
     grid-template-rows: auto;
@@ -107,6 +107,20 @@ input[type="file"] {
     width: 85%;
     height: 100%;
     transition: 0.2s;
+}
+.folder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 500%;
+    margin-left: 5%;
+    margin-top: 5%;
+    border-radius: 20px;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    background-color: var(--secondary);
+    border: 10px solid var(--secondary);
+    box-shadow: rgba(0, 0, 0, 0.5) 0px -8px 10px;
 }
 .file {
     display: flex;

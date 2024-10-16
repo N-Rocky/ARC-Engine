@@ -16,7 +16,7 @@ class Logic {
 
     // Scripting
     #transpiler = false;
-    #currentKey = "";
+    #currentKey = null;
 
     constructor() { // Set camera properties
         this.#viewport = new Camera([0, 0], [scene.canvas.width, scene.canvas.height]);
@@ -32,7 +32,7 @@ class Logic {
                 if (entity.behavior.includes("function Update()")) { // Uses Update function
                     eval(entity.behavior + "\nUpdate()");
                 }
-                if (entity.behavior.includes("function KeyPress(") && this.#currentKey != "") { // Uses KeyPress function
+                if (entity.behavior.includes("function KeyPress(") && this.#currentKey != null) { // Uses KeyPress function
                     eval(entity.behavior + "KeyPress('" + this.#currentKey + "')");
                 }
             }
@@ -45,7 +45,7 @@ class Logic {
         }
 
         // Reset user input
-        this.#currentKey = "";
+        this.#currentKey = null;
     }
 
     CheckCollision(entity) {
@@ -229,39 +229,48 @@ class Logic {
             body: JSON.stringify({
                 projectID: projectID
             })
-        }).then((res) => res.json()).then((res) => data = res);
+        }).then((res) => res.json()).then((res) => data = res.files);
 
-        for (let folder of ["images", "audio"]) { // Load each asset collection
-            const displayFiles = document.getElementById(folder);
-            while (displayFiles.firstChild) {
-                displayFiles.removeChild(displayFiles.lastChild);
-            }
-            for (let file of data.files) {
-                if (folder == "images" && [".png", ".jpg", "jpeg"].includes(file.slice(-4))) {
-                    let element = document.createElement("a"); element.classList.add("file");
-                    element.style.backgroundImage = `url('${projectID}/file/${file}')`;
-                    element.addEventListener("click", () => {
-                        if (this.#selectedEntity != -1) {
-                            let entity = this.#sceneEntities[this.#selectedEntity];
-                            entity.source = file;
-                            scene.stage.removeChild(entity.renderer);
-                            entity.LoadRenderer();
-                        }
-                    });
-                    displayFiles.appendChild(element);
+        const displayFiles = document.getElementById("files");
+        while (displayFiles.firstChild) {
+            displayFiles.removeChild(displayFiles.lastChild);
+        }
+
+        for (let folder of Object.keys(data)) { // Load each asset collection
+            let displayFolder = document.createElement("a"); displayFolder.classList.add("folder");
+            displayFolder.addEventListener("click", () => {
+                while (displayFiles.firstChild) {
+                    displayFiles.removeChild(displayFiles.lastChild);
                 }
-                else if (folder == "audio" && [".mp3", ".wav"].includes(file.slice(-4))) {
-                    let element = document.createElement("a"); element.classList.add("file");
-                    element.style.backgroundImage = `url('/Assets/Images/DefaultAudio.png')`;
-                    element.addEventListener("click", () => {
-                        if (this.#selectedEntity != -1) {
-                            let entity = this.#sceneEntities[this.#selectedEntity];
-                            // AUDIO Behavior
-                        }
-                    });
-                    displayFiles.appendChild(element);
+                for (let file of data[folder]) {
+
+                    let fileURL = `file/${folder}/${file}`;
+
+                    let displayFile = document.createElement("a"); displayFile.classList.add("file");
+                    if (folder == "Images") { // Image file
+                        displayFile.style.backgroundImage = `url('${projectID}/${fileURL}')`;
+                        displayFile.addEventListener("click", () => {
+                            if (this.#selectedEntity != -1) {
+                                let entity = this.#sceneEntities[this.#selectedEntity];
+                                entity.source = fileURL;
+                                scene.stage.removeChild(entity.renderer);
+                                entity.LoadRenderer();
+                            }
+                        });
+                    }
+                    else if (folder == "Audio") { // Audio file type
+                        displayFile.style.backgroundImage = `url('/Resources/DefaultAudio.png')`;
+                        // Implement Audio Behavior
+                    }
+                    else { // Misc. file type
+                        displayFile.style.backgroundImage = `url('/Resources/DefaultFile.png')`;
+                        // Implement Default Behavior
+                    }
+                    
+                    displayFiles.appendChild(displayFile);
                 }
-            }
+            });
+            displayFiles.appendChild(displayFolder);
         }
     }
 
@@ -401,8 +410,8 @@ class Entity { // Basis of every game object
     }
 
     async LoadRenderer() {
-        await PIXI.Assets.load("file/" + this.source);
-        this.renderer = PIXI.Sprite.from("file/" + this.source);
+        await PIXI.Assets.load(this.source);
+        this.renderer = PIXI.Sprite.from(this.source);
         this.renderer.width = this.width;
         this.renderer.height = this.height;
         this.renderer.x = this.position.x;

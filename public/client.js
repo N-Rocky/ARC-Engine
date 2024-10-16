@@ -278,7 +278,7 @@ document.getElementById("scene").onmouseup = (event) => { // Left click release 
 }
 document.getElementById("scene").oncontextmenu = (event) => { // Right click
     event.preventDefault();
-    logic.CreateEntity(new Vector2(logic.mouseX, logic.mouseY), 50, 50, "Square.png");
+    logic.CreateEntity(new Vector2(logic.mouseX, logic.mouseY), 50, 50, "file/Images/Square.png");
 }
 document.getElementById("scene").addEventListener("wheel", event => { // Scroll wheel
     const delta = Math.sign(event.deltaY);

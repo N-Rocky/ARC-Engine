@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ARC Engine</title>
-    <link rel="icon" type="image/png" href="Assets/Images/favicon.png">
+    <link rel="icon" type="image/png" href="Resources/favicon.png">
     <link rel="stylesheet" href="/style.css">
     <script src="https://pixijs.download/release/pixi.min.js"></script>
 </head>
@@ -16,9 +16,8 @@
         <!-- Taskbar -->
         <div id="taskbar">
             <label id="fileSelector" for="fileSelect">+</label>
-            <input type="file" id="fileSelect" name="fileSelect">
-            <div id="images" class="files"></div>
-            <div id="audio" class="files"></div>
+            <input type="file" id="fileSelect" name="fileSelect" accept=".png,.jpg,.jpeg,.mp3,.wav,.obj">
+            <div id="files"></div>
         </div>
     </div>
 
