@@ -167,3 +167,19 @@ function LoadJSONResource(url, callback) {
 function Random(min, max) { // Inclusive, exclusive
     return Math.floor(Math.random() * (max - min) + min);
 }
+
+function AudioSource(source) { // Create and add an audio element
+    audio = document.createElement("AUDIO");
+    audio.src = "Assets/Audio/" + source;
+    audio.type = 'audio/mpeg';
+    audio.loop = false;
+    audio.volume = 1;
+    audio.autoplay = true;
+    document.body.appendChild(audio);
+    setTimeout(function (element) {
+        if (!audio.paused) { // Still playing, so wait until it is done
+            setTimeout(function (element) { element.remove(); }, element.duration * 1000, element);
+        }
+        else { element.remove(); }
+    }, 1000, audio); // Wait one second before checking if it finished playing (Due to load times)
+}

@@ -115,10 +115,11 @@ app.post("/new", (req, res) => { // Creating a new project in the database
     const projectID = uuidv4();
     fs.mkdirSync(`./Database/${id}/${projectID}`);
     clients[id][projectID] = { owner: id, path: `./Database/${id}/${projectID}` };
+    const configFile = { name: req.body.name, description: req.body.description };
 
     // Assets folder, config file, and scene file
     fs.mkdirSync(`./Database/${id}/${projectID}/Assets`);
-    fs.writeFileSync(`./Database/${id}/${projectID}/config.json`, JSON.stringify(config));
+    fs.writeFileSync(`./Database/${id}/${projectID}/config.json`, JSON.stringify(configFile));
     fs.writeFileSync(`./Database/${id}/${projectID}/scene.json`, JSON.stringify({ entities: [] }));
 
     // Create Asset subfolders based on public subfolders

@@ -43,17 +43,17 @@ Noah Butler
 | Status | Date | Description |
 | :----: | :-----: | :---------: |
 | Completed | 9/18/2024 | Get Google OAuth back up and running
-| Not Started | N/A | Connect the backend to WebGL (format for asset loading)
+| Completed | 10/29/2024 | Connect the backend to WebGL (format for asset loading)
 | Not Started | N/A | Setup multiplayer session functionality
 
 ## Engine Development
 
 | Status | Date | Description |
 | :----: | :-----: | :---------: |
-| Started | 9/23/2024 | Swap from Pixi.js to WebGL for 2D rendering
+| Completed | 11/1/2024 | Swap from Pixi.js to WebGL for 2D rendering
 | Completed | 9/27/2024 | Add support for mp3 files for sound effects within games
-| Not Started | N/A | 3D support in the editor and the logic
-| Not Started | N/A | Begin working on 3D rendering with WebGL
+| Started | 11/4/2024 | 3D support in the editor and the logic
+| Completed | 11/1/2024 | Begin working on 3D rendering with WebGL
 | Not Started | N/A | Setup networked cooperative development
 | Not Started | N/A | Add WebXR support for VR games
 | Not Started | N/A | Begin working on custom programming language

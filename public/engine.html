@@ -11,8 +11,8 @@
 <body>
     <!-- Project Window -->
     <div id="project">
-        <!-- Scene Window -->
-        <canvas id="scene"></canvas>
+        <!-- Scene/Game Window -->
+        <canvas id="canvas" class="scene"></canvas>
         <!-- Taskbar -->
         <div id="taskbar">
             <label id="fileSelector" for="fileSelect">+</label>
@@ -21,14 +21,11 @@
         </div>
     </div>
 
-    <!-- Game Window -->
-    <canvas id="game"></canvas>
-
     <!-- Inspector Window -->
     <div id="inspector">
         <div class="componentHeader" style="color: white;">Inspector</div>
         <div id="projectSettings">
-            
+
         </div>
         <div class="component">
             <div class="componentHeader">Identity</div>
@@ -45,20 +42,26 @@
             <div class="componentHeader">Transform</div>
             <div class="componentBody">
                 <div>
-                    <label for="xInput">X:</label>
-                    <input type="number" min="-1000" max="1000" value="0" name="xInput" id="xInput" />
-                    <input type="range" min="-1000" max="1000" value="0" name="xSlider" id="xSlider" class="componentItem" />
-                    <label for="yInput">Y:</label>
-                    <input type="number" min="-1000" max="1000" value="0" name="yInput" id="yInput" class="componentItem" />
-                    <input type="range" min="-1000" max="1000" value="0" name="ySlider" id="ySlider" class="componentItem" />
-                    <label for="widthInput">Width:</label>
-                    <input type="number" min="0" max="1000" value="0" name="widthInput" id="widthInput" class="componentItem" />
-                    <input type="range" min="0" max="1000" value="0" name="widthSlider" id="widthSlider" class="componentItem" />
-                    <label for="heightInput">Height:</label>
-                    <input type="number" min="0" max="1000" value="0" name="heightInput" id="heightInput" class="componentItem" />
-                    <input type="range" min="0" max="1000" value="0" name="heightSlider" id="heightSlider" class="componentItem" />
-                    <label for="rotationSlider">Rotation:</label>
-                    <input type="range" min="0" max="360" value="0" name="rotationSlider" id="rotationSlider" class="componentItem" />
+                    <label for="xPos">X:</label>
+                    <input type="number" min="-1000" max="1000" value="0" name="xPos" id="xPos" />
+                    <label for="yPos">Y:</label>
+                    <input type="number" min="-1000" max="1000" value="0" name="yPos" id="yPos" />
+                    <label for="zPos">Z:</label>
+                    <input type="number" min="-1000" max="1000" value="0" name="zPos" id="zPos" />
+
+                    <label for="xRot">X:</label>
+                    <input type="number" min="-1000" max="1000" value="0" name="xRot" id="xRot" />
+                    <label for="yRot">Y:</label>
+                    <input type="number" min="-1000" max="1000" value="0" name="yRot" id="yRot" />
+                    <label for="zRot">Z:</label>
+                    <input type="number" min="-1000" max="1000" value="0" name="zRot" id="zRot" />
+
+                    <label for="xScale">X:</label>
+                    <input type="number" min="-1000" max="1000" value="0" name="xScale" id="xScale" />
+                    <label for="yScale">Y:</label>
+                    <input type="number" min="-1000" max="1000" value="0" name="yScale" id="yScale" />
+                    <label for="zScale">Z:</label>
+                    <input type="number" min="-1000" max="1000" value="0" name="zScale" id="zScale" />
                 </div>
             </div>
         </div>
@@ -143,6 +146,11 @@
 
     <!-- Python Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/brython@3.8.9/brython_stdlib.js"></script>
+
+    <!-- Renderer Script Files -->
+    <script src="/app.js"></script>
+    <script src="/utilities.js"></script>
+    <script src="/gl-matrix-min.js"></script>
 
     <!-- Client Script File -->
     <script src="/client.js"></script>

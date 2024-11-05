@@ -1,59 +1,40 @@
-// Scene Window, Game Window, and Logic
-let scene; let game; let logic; const resolution = 2;
+// Scene/Game Window, WebGL Context, Logic, and Frame Render method
+let canvas; let gl; let logic; let frame;
 
-async function init() { // Initialize scene canvas and logic
+async function init() { // Initialize scene canvas, game canvas, and logic
 
-    let sceneCanvas = document.getElementById("scene");
-    sceneCanvas.width = sceneCanvas.clientWidth;
-    sceneCanvas.height = sceneCanvas.clientHeight;
-    scene = new PIXI.Application();
-    await scene.init({
-        view: sceneCanvas,
-        width: sceneCanvas.width,
-        height: sceneCanvas.height,
-        background: '#ffff',
-        resolution: resolution
-    });
-    scene.ticker.start();
+    // Canvas and GL
+    canvas = document.getElementById("canvas");
+    gl = canvas.getContext('webgl2');
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
 
-    let gameCanvas = document.getElementById("game");
-    gameCanvas.width = document.body.clientWidth;
-    gameCanvas.height = document.body.clientHeight;
-    game = new PIXI.Application();
-    await game.init({
-        view: gameCanvas,
-        width: gameCanvas.width,
-        height: gameCanvas.height,
-        background: '#ffff',
-        resolution: resolution
-    });
-    game.ticker.stop();
-
+    // Logic and project data
     logic = new Logic();
     logic.LoadProject();
     logic.LoadAssets();
 
+    // Generate shaders and frame method
+    frame = CreateShaders(canvas, gl);
     RenderScreen(); // Begin render loop
 }
 
 function Playmode() { // Enter playtest mode
     if (!logic.running) { // Run game
-        document.getElementById("game").style.width = "100dvw";
-        document.getElementById("game").style.height = "100dvh";
 
-        // PIXI Tickers
-        scene.ticker.stop();
-        game.ticker.start();
-
+        canvas.classList.remove('scene');
+        canvas.classList.add('game');
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+        
         logic.Playtest(); // Play game in logic
     }
     else { // Close game
-        document.getElementById("game").style.width = "0dvw";
-        document.getElementById("game").style.height = "0dvh";
 
-        // PIXI Tickers
-        game.ticker.stop();
-        scene.ticker.start();
+        canvas.classList.remove('game');
+        canvas.classList.add('scene');
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
 
         logic.Quit(); // Quit game in logic
     }
@@ -62,71 +43,12 @@ function Playmode() { // Enter playtest mode
 function RenderScreen(timestamp) {
     if (logic.running) { // Game view
         logic.Update(timestamp);
-        game.stage.pivot.x = logic.camera.position.x;
-        game.stage.pivot.y = logic.camera.position.y;
-        game.stage.position.x = game.canvas.width / resolution / 2;
-        game.stage.position.y = game.canvas.height / resolution / 2;
-        for (let entity of logic.gameEntities) {
-            try {
-                entity.renderer.position.x = entity.position.x;
-                entity.renderer.position.y = entity.position.y;
-
-                entity.renderer.anchor.set(0.5);
-
-                entity.renderer.width = entity.width;
-                entity.renderer.height = entity.height;
-                entity.renderer.rotation = entity.rotation * Math.PI / 180;
-                entity.renderer.zIndex = entity.zIndex;
-                entity.renderer.tint = [entity.color[0] / 255, entity.color[1] / 255, entity.color[2] / 255];
-            }
-            catch { }
-        }
+        frame(logic.camera, logic.entities);
     }
     else { // Scene view
-        scene.stage.pivot.x = logic.viewport.position.x;
-        scene.stage.pivot.y = logic.viewport.position.y;
-        scene.stage.position.x = scene.canvas.width / resolution / 2;
-        scene.stage.position.y = scene.canvas.height / resolution / 2;
-        for (let entity of logic.sceneEntities) {
-            try {
-                entity.renderer.position.x = entity.position.x;
-                entity.renderer.position.y = entity.position.y;
-
-                entity.renderer.anchor.set(0.5);
-
-                entity.renderer.width = entity.width;
-                entity.renderer.height = entity.height;
-                entity.renderer.rotation = entity.rotation * Math.PI / 180;
-                entity.renderer.zIndex = entity.zIndex;
-                entity.renderer.tint = [entity.color[0] / 255, entity.color[1] / 255, entity.color[2] / 255];
-                if (logic.sceneEntities.indexOf(entity) == logic.selectedEntity) {
-                    
-                }
-            }
-            catch { }
-        }
+        frame(logic.viewport, logic.entities);
     }
     requestAnimationFrame(RenderScreen);
-}
-
-function Random(min, max) { // Inclusive, exclusive
-    return Math.floor(Math.random() * (max - min) + min);
-}
-
-function AudioSource(source) { // Create and add an audio element
-    audio = document.createElement("AUDIO");
-    audio.src = "Assets/Audio/" + source;
-    audio.type = 'audio/mpeg';
-    audio.loop = false;
-    audio.volume = 1;
-    audio.autoplay = true;
-    document.body.appendChild(audio);
-    setTimeout(function (element) {
-        if (!audio.paused) { // Still playing, so wait until it is done
-            setTimeout(function (element) { element.remove(); }, element.duration * 1000, element);
-        }
-        else { element.remove(); }
-    }, 1000, audio); // Wait one second before checking if it finished playing (Due to load times)
 }
 
 // Uploading assets to the server
@@ -184,7 +106,7 @@ window.addEventListener("keydown", function (event) { // Key down
         else {
             document.getElementById("terminal").style.display = "flex";
             if (logic.selectedEntity != -1) {
-                document.getElementById("scriptText").value = logic.sceneEntities[logic.selectedEntity].behavior;
+                document.getElementById("scriptText").value = logic.entities[logic.selectedEntity].behavior;
             }
         }
     }
@@ -198,11 +120,11 @@ window.addEventListener("keydown", function (event) { // Key down
             Playmode(); break;
         case "Delete":
             if (logic.selectedEntity != -1) {
-                logic.sceneEntities[logic.selectedEntity].Delete();
+                logic.entities[logic.selectedEntity].Delete();
             }
             break;
         case "KeyT":
-            console.log("Entities:"); console.log(logic.gameEntities); break;
+            console.log("Entities:"); console.log(logic.entities); break;
         default:
             break;
     }
@@ -215,10 +137,11 @@ window.addEventListener("keydown", function (event) { // Key down
 function ShiftViewport() {
     if (!shifting) {
         shifting = true;
-        if (inputs.lArrow) { logic.viewport.position.x -= 5; }
-        if (inputs.rArrow) { logic.viewport.position.x += 5; }
-        if (inputs.uArrow) { logic.viewport.position.y -= 5; }
-        if (inputs.dArrow) { logic.viewport.position.y += 5; }
+        const shiftAmmount = 0.025;
+        if (inputs.lArrow) { logic.viewport.position.x += shiftAmmount; }
+        if (inputs.rArrow) { logic.viewport.position.x -= shiftAmmount; }
+        if (inputs.uArrow) { logic.viewport.position.y += shiftAmmount; }
+        if (inputs.dArrow) { logic.viewport.position.y -= shiftAmmount; }
         if (inputs.lArrow || inputs.rArrow || inputs.uArrow || inputs.dArrow) {
             setTimeout(function () { shifting = false; ShiftViewport(); }, 0);
         }
@@ -235,7 +158,7 @@ window.onmousemove = (event) => {
     if (logic && logic.running) { logic.UpdateMouse(event.clientX, event.clientY); }
     else if (logic) { logic.UpdateMouse(event.clientX, event.clientY); }
 }
-document.getElementById("scene").onmouseup = (event) => { // Left click release on scene view
+document.getElementById("canvas").onmouseup = (event) => { // Left click release on scene view
     logic.UpdateMouse(event.clientX, event.clientY);
     logic.HandleClick();
 
@@ -246,17 +169,17 @@ document.getElementById("scene").onmouseup = (event) => { // Left click release 
             element.style.flexGrow = "1";
         }
 
-        let entity = logic.sceneEntities[logic.selectedEntity];
-        document.getElementById("xInput").value = Math.floor(entity.position.x);
-        document.getElementById("xSlider").value = Math.floor(entity.position.x);
-        document.getElementById("yInput").value = Math.floor(entity.position.y);
-        document.getElementById("ySlider").value = Math.floor(entity.position.y);
-        document.getElementById("widthInput").value = Math.floor(entity.width);
-        document.getElementById("widthSlider").value = Math.floor(entity.width);
-        document.getElementById("heightInput").value = Math.floor(entity.height);
-        document.getElementById("heightSlider").value = Math.floor(entity.height);
-        document.getElementById("rotationSlider").value = Math.floor(entity.rotation);
-        document.getElementById("zInput").value = entity.zIndex;
+        let entity = logic.entities[logic.selectedEntity];
+        document.getElementById("xPos").value = Math.floor(entity.position.x);
+        document.getElementById("yPos").value = Math.floor(entity.position.y);
+        document.getElementById("zPos").value = Math.floor(entity.position.z);
+        document.getElementById("xRot").value = Math.floor(entity.rotation.x);
+        document.getElementById("yRot").value = Math.floor(entity.rotation.y);
+        document.getElementById("zRot").value = Math.floor(entity.rotation.z);
+        document.getElementById("xScale").value = Math.floor(entity.scale.x);
+        document.getElementById("yScale").value = Math.floor(entity.scale.y);
+        document.getElementById("zScale").value = Math.floor(entity.scale.z);
+
         document.getElementById("rSlider").value = Math.floor(entity.color[0]);
         document.getElementById("gSlider").value = Math.floor(entity.color[1]);
         document.getElementById("bSlider").value = Math.floor(entity.color[2]);
@@ -276,59 +199,58 @@ document.getElementById("scene").onmouseup = (event) => { // Left click release 
         }
     }
 }
-document.getElementById("scene").oncontextmenu = (event) => { // Right click
+document.getElementById("canvas").oncontextmenu = (event) => { // Right click
     event.preventDefault();
-    logic.CreateEntity(new Vector2(logic.mouseX, logic.mouseY), 50, 50, "file/Images/Square.png");
+    logic.CreateEntity(new Vector3(logic.mouseX / 100, logic.mouseY / 100, 2), new Vector3(120, 180, 0), new Vector3(1, 1, 1), "file/Models/Monkey.json", "file/Images/Debug.png");
 }
-document.getElementById("scene").addEventListener("wheel", event => { // Scroll wheel
+document.getElementById("canvas").addEventListener("wheel", event => { // Scroll wheel
     const delta = Math.sign(event.deltaY);
-    ScaleViewport(delta);
+    //ScaleViewport(delta);
 });
 
 // Updating behavior
 document.getElementById("scriptText").oninput = function () {
     if (logic.selectedEntity != -1) {
-        logic.sceneEntities[logic.selectedEntity].behavior = document.getElementById("scriptText").value;
+        logic.entities[logic.selectedEntity].behavior = document.getElementById("scriptText").value;
     }
 }
 
 // Transform values
-document.getElementById("xInput").oninput = function () { document.getElementById("xSlider").value = document.getElementById("xInput").value; UpdateComponents(); };
-document.getElementById("yInput").oninput = function () { document.getElementById("ySlider").value = document.getElementById("yInput").value; UpdateComponents(); };
-document.getElementById("widthInput").oninput = function () { document.getElementById("widthSlider").value = document.getElementById("widthInput").value; UpdateComponents(); };
-document.getElementById("heightInput").oninput = function () { document.getElementById("heightSlider").value = document.getElementById("heightInput").value; UpdateComponents(); };
-document.getElementById("rotationSlider").oninput = function () { UpdateComponents(); };
-document.getElementById("zInput").oninput = function () { UpdateComponents(); };
+document.getElementById("xPos").oninput = function () { UpdateComponents(); };
+document.getElementById("yPos").oninput = function () { UpdateComponents(); };
+document.getElementById("zPos").oninput = function () { UpdateComponents(); };
+document.getElementById("xRot").oninput = function () { UpdateComponents(); };
+document.getElementById("yRot").oninput = function () { UpdateComponents(); };
+document.getElementById("zRot").oninput = function () { UpdateComponents(); };
+document.getElementById("xScale").oninput = function () { UpdateComponents(); };
+document.getElementById("yScale").oninput = function () { UpdateComponents(); };
+document.getElementById("zScale").oninput = function () { UpdateComponents(); };
+
 document.getElementById("rSlider").oninput = function () { UpdateComponents(); };
 document.getElementById("gSlider").oninput = function () { UpdateComponents(); };
 document.getElementById("bSlider").oninput = function () { UpdateComponents(); };
-document.getElementById("massInput").oninput = function () { document.getElementById("massSlider").value = document.getElementById("massInput").value; UpdateComponents(); };
-document.getElementById("xSlider").oninput = function () { document.getElementById("xInput").value = document.getElementById("xSlider").value; UpdateComponents(); };
-document.getElementById("ySlider").oninput = function () { document.getElementById("yInput").value = document.getElementById("ySlider").value; UpdateComponents(); };
-document.getElementById("widthSlider").oninput = function () { document.getElementById("widthInput").value = document.getElementById("widthSlider").value; UpdateComponents(); };
-document.getElementById("heightSlider").oninput = function () { document.getElementById("heightInput").value = document.getElementById("heightSlider").value; UpdateComponents(); };
-document.getElementById("massSlider").oninput = function () { document.getElementById("massInput").value = document.getElementById("massSlider").value; UpdateComponents(); };
+document.getElementById("massInput").oninput = function () { UpdateComponents(); };
 document.getElementById("kinematicInput").oninput = function () { UpdateComponents(); };
 document.getElementById("staticInput").oninput = function () { UpdateComponents(); };
 document.getElementById("gravityInput").oninput = function () { UpdateComponents(); };
 document.getElementById("nameInput").oninput = function () { UpdateComponents(); };
 document.getElementById("tagInput").oninput = function () { UpdateComponents(); };
-function UpdateComponents() { // Updates the entities attributes to the component values
-    logic.sceneEntities[logic.selectedEntity].position = new Vector2(parseInt(document.getElementById("xInput").value), parseInt(document.getElementById("yInput").value));
-    logic.sceneEntities[logic.selectedEntity].width = parseInt(document.getElementById("widthInput").value);
-    logic.sceneEntities[logic.selectedEntity].height = parseInt(document.getElementById("heightInput").value);
-    logic.sceneEntities[logic.selectedEntity].rotation = parseInt(document.getElementById("rotationSlider").value);
-    logic.sceneEntities[logic.selectedEntity].zIndex = parseInt(document.getElementById("zInput").value);
-    logic.sceneEntities[logic.selectedEntity].color[0] = parseInt(document.getElementById("rSlider").value);
-    logic.sceneEntities[logic.selectedEntity].color[1] = parseInt(document.getElementById("gSlider").value);
-    logic.sceneEntities[logic.selectedEntity].color[2] = parseInt(document.getElementById("bSlider").value);
-    logic.sceneEntities[logic.selectedEntity].mass = parseInt(document.getElementById("massInput").value);
-    logic.sceneEntities[logic.selectedEntity].kinematic = document.getElementById("kinematicInput").checked;
-    logic.sceneEntities[logic.selectedEntity].static = document.getElementById("staticInput").checked;
-    logic.sceneEntities[logic.selectedEntity].gravity = document.getElementById("gravityInput").checked;
 
-    logic.sceneEntities[logic.selectedEntity].name = document.getElementById("nameInput").value;
-    logic.sceneEntities[logic.selectedEntity].tag = document.getElementById("tagInput").value;
+function UpdateComponents() { // Updates the entities attributes to the component values
+    logic.entities[logic.selectedEntity].position = new Vector3(parseInt(document.getElementById("xPos").value), parseInt(document.getElementById("yPos").value), parseInt(document.getElementById("zPos").value));
+    logic.entities[logic.selectedEntity].rotation = new Vector3(parseInt(document.getElementById("xRot").value), parseInt(document.getElementById("yRot").value), parseInt(document.getElementById("zRot").value));
+    logic.entities[logic.selectedEntity].scale = new Vector3(parseInt(document.getElementById("xScale").value), parseInt(document.getElementById("yScale").value), parseInt(document.getElementById("zScale").value));
+
+    logic.entities[logic.selectedEntity].color[0] = parseInt(document.getElementById("rSlider").value);
+    logic.entities[logic.selectedEntity].color[1] = parseInt(document.getElementById("gSlider").value);
+    logic.entities[logic.selectedEntity].color[2] = parseInt(document.getElementById("bSlider").value);
+    logic.entities[logic.selectedEntity].mass = parseInt(document.getElementById("massInput").value);
+    logic.entities[logic.selectedEntity].kinematic = document.getElementById("kinematicInput").checked;
+    logic.entities[logic.selectedEntity].static = document.getElementById("staticInput").checked;
+    logic.entities[logic.selectedEntity].gravity = document.getElementById("gravityInput").checked;
+
+    logic.entities[logic.selectedEntity].name = document.getElementById("nameInput").value;
+    logic.entities[logic.selectedEntity].tag = document.getElementById("tagInput").value;
 }
 
 window.onload = function () {
