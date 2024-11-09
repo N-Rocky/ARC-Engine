@@ -13,7 +13,7 @@ class Logic {
     #viewport; #camera;
 
     // Physics
-    #gravity = 0.5;
+    #gravity = -0.01;
 
     // Scripting
     #transpiler = false;
@@ -70,18 +70,18 @@ class Logic {
                     else if (entity.position.z + entity.scale.z / 2 > other.position.z) { zDistance = Math.abs(entity.position.z - entity.scale.z / 2 - other.position.z) / other.scale.z; }
 
                     if (xDistance > yDistance && xDistance > zDistance) {
-                        if (entity.position.x < other.position.x) { entity.position.x -= 1; }
-                        else { entity.position.x += 1; }
+                        if (entity.position.x < other.position.x) { entity.position.x -= 0.001; }
+                        else { entity.position.x += 0.001; }
                         xCollision = true;
                     }
                     else if (yDistance > xDistance && yDistance > zDistance) {
-                        if (entity.position.y < other.position.y) { entity.position.y -= 1; }
-                        else { entity.position.y += 1; }
+                        if (entity.position.y < other.position.y) { entity.position.y -= 0.001; }
+                        else { entity.position.y += 0.001; }
                         yCollision = true;
                     }
                     else {
-                        if (entity.position.z < other.position.z) { entity.position.z -= 1; }
-                        else { entity.position.z += 1; }
+                        if (entity.position.z < other.position.z) { entity.position.z -= 0.001; }
+                        else { entity.position.z += 0.001; }
                         zCollision = true;
                     }
 
@@ -93,9 +93,9 @@ class Logic {
                 if (xCollision) { entity.velocity.x *= -1 * entity.elasticity; }
                 if (yCollision) { entity.velocity.y *= -1 * entity.elasticity; }
                 if (zCollision) { entity.velocity.z *= -1 * entity.elasticity; }
-                if (Math.abs(entity.velocity.x) < 0.2) { entity.velocity.x = 0; }
-                if (Math.abs(entity.velocity.y) < 0.2) { entity.velocity.y = 0; }
-                if (Math.abs(entity.velocity.z) < 0.2) { entity.velocity.z = 0; }
+                if (Math.abs(entity.velocity.x) < 0.002) { entity.velocity.x = 0; }
+                if (Math.abs(entity.velocity.y) < 0.002) { entity.velocity.y = 0; }
+                if (Math.abs(entity.velocity.z) < 0.002) { entity.velocity.z = 0; }
 
                 if (xCollision || yCollision || zCollision) {
                     if (!this.#transpiler) { // Using vailla Javascript
@@ -127,61 +127,42 @@ class Logic {
     }
 
     HandleClick() { // Called every time the user clicks
-        if (!this.#running) { // Scene click
-            const currentSelection = this.#selectedEntity;
-            let newSelection = false;
-            for (let entity of this.#sceneEntities) { // Check for click on an entity
-                let xCondition = (this.#mouseX >= entity.position.x - entity.scale.x / 2 && this.#mouseX <= entity.position.x + entity.scale.x / 2);
-                let yCondition = (this.#mouseY >= entity.position.y - entity.scale.y / 2 && this.#mouseY <= entity.position.y + entity.scale.y / 2);
-                if (xCondition && yCondition && this.#selectedEntity != this.#sceneEntities.indexOf(entity) && currentSelection != this.#sceneEntities.indexOf(entity)) {
-                    if (newSelection && entity.zIndex > this.#sceneEntities[this.#selectedEntity].zIndex) {
-                        this.#selectedEntity = this.#sceneEntities.indexOf(entity);
-                    }
-                    else if (!newSelection) {
-                        newSelection = true;
-                        this.#selectedEntity = this.#sceneEntities.indexOf(entity);
-                    }
+        this.#selectedEntity += 1;
+        if (this.#selectedEntity >= this.#sceneEntities.length) {
+            this.#selectedEntity = 0;
+        }
+    }
+
+    Playtest() { // Start and stop the game
+        if (!this.#running) {
+            for (let entity of this.#sceneEntities) { // Cloned instances
+                const clone = entity.Clone();
+                this.#gameEntities.push(clone);
+            }
+            this.#camera.position = new Vector3(0, 0, 0);
+            this.#running = true;
+            for (let entity of this.#gameEntities) {
+                // Start Method
+                if (!this.#transpiler) { // Using vanilla Javascript
+                    if (entity.behavior.includes("function Start()")) {
+                        eval(entity.behavior + "\nStart()");
+                    } else { eval(entity.behavior); }
+                }
+                else { // Using transpiler
+                    TranspileStart(entity);
                 }
             }
-            if (!newSelection) { this.#selectedEntity = -1; }
         }
-
-        // TESTING PURPOSES ONLY ---------------------------------------------------------------------------------------- !
-        this.#selectedEntity = 0;
-    }
-
-    Playtest() {
-        for (let entity of this.#sceneEntities) { // Cloned instances
-            const clone = entity.Clone();
-            this.#gameEntities.push(clone);
+        else {
+            this.#running = false;
+            this.#gameEntities = [];
         }
-        this.#camera.position = new Vector3(0, 0, 0);
-        this.#running = true;
-        for (let index = 0; index < this.#gameEntities.length; index++) {
-
-            let entity = this.#gameEntities[index];
-
-            // Start Method
-            if (!this.#transpiler) { // Using vanilla Javascript
-                if (entity.behavior.includes("function Start()")) {
-                    eval(entity.behavior + "\nStart()");
-                } else { eval(entity.behavior); }
-            }
-            else { // Using transpiler
-                TranspileStart(entity);
-            }
-        }
-    }
-
-    Quit() {
-        this.#running = false;
-        this.#gameEntities = [];
     }
 
     CreateEntity(position, rotation, scale, model, texture) {
-        if (this.#running) { return; }
-        const entity = new Entity(position, rotation, scale, model, texture, "Object" + (this.#sceneEntities.length + 1));
-        this.#sceneEntities.push(entity);
+        let entities = this.#running ? this.#gameEntities : this.#sceneEntities;
+        const entity = new Entity(position, rotation, scale, model, texture, "Object" + (entities.length + 1));
+        entities.push(entity);
     }
 
     async SaveProject() {
@@ -216,10 +197,6 @@ class Logic {
                 projectID: projectID
             })
         }).then((res) => res.json()).then((res) => data = res);
-
-        try { // Clear the screen and current entities
-            while (scene.stage.children[0]) { scene.stage.removeChild(scene.stage.children[0]); }
-        } catch { }
 
         this.#sceneEntities = [];
         for (let entityData of data.entities) {
@@ -356,6 +333,9 @@ class Vector3 { // 3D Vectors
         if (this.magnitude == 0) { return new Vector3(); }
         return new Vector3(this.x / this.magnitude, this.y / this.magnitude, this.z / this.magnitude);
     }
+    get clone() {
+        return new Vector3(this.x, this.y, this.z);
+    }
     static dot(vector1, vector2) {
         return vector1.x * vector2.x + vector1.y * vector2.y + vector1.z * vector2.z;
     }
@@ -367,8 +347,8 @@ class Camera {
     resolution; fieldOfView;
     constructor(position, resolution) {
         this.position = new Vector3(position[0], position[1], position[2]);
-        this.resolution = new Vector2(resolution[0], resolution[1]);
         this.rotation = new Vector3(0, 0, 0);
+        this.resolution = new Vector2(resolution[0], resolution[1]);
         this.fieldOfView = 80;
     }
 }
@@ -381,7 +361,7 @@ class Entity { // Basis of every game object
         this.name = name;
 
         // Default values
-        this.kinematic = false; this.static = false; this.gravity = false;
+        this.kinematic = false; this.static = false; this.gravity = true;
         this.mass = 2; this.elasticity = 0.6;
         this.velocity = new Vector3(); this.acceleration = new Vector3();
         this.tag = "Default";
@@ -394,10 +374,10 @@ class Entity { // Basis of every game object
     }
 
     Clone() { // Returns a deep copy
-        let clone = new Entity(this.position, this.rotation, this.scale, this.model, this.texture, this.name);
+        let clone = new Entity(this.position.clone, this.rotation.clone, this.scale.clone, this.model, this.texture, this.name);
         clone.kinematic = this.kinematic; clone.static = this.static; clone.gravity = this.gravity;
         clone.mass = this.mass; clone.elasticity = this.elasticity;
-        clone.velocity = this.velocity; clone.acceleration = this.acceleration;
+        clone.velocity = this.velocity.clone; clone.acceleration = this.acceleration.clone;
         clone.tag = this.tag;
         clone.color = this.color;
         clone.behavior = this.behavior;
@@ -406,15 +386,11 @@ class Entity { // Basis of every game object
 
     toJSON() { // Saves the entity as JSON
         let data = {};
-        data.position = this.position; data.rotation = this.rotation; data.scale = this.scale;
-        data.model = this.model; data.texture = this.texture;
-        data.name = this.name;
-        data.kinematic = this.kinematic; data.static = this.static; data.gravity = this.gravity;
-        data.mass = this.mass; data.elasticity = this.elasticity;
-        data.velocity = this.velocity; data.acceleration = this.acceleration;
-        data.tag = this.tag;
-        data.color = this.color;
-        data.behavior = this.behavior;
+        for (let attribute in this) { // Add all attributes
+            if (attribute != "renderer") { // Ignore renderer
+                data[attribute] = this[attribute];
+            }
+        }
         return data;
     }
 

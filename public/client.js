@@ -1,7 +1,7 @@
 // Scene/Game Window, WebGL Context, Logic, and Frame Render method
 let canvas; let gl; let logic; let frame;
 
-async function init() { // Initialize scene canvas, game canvas, and logic
+async function init() { // Initialize graphics and logic
 
     // Canvas and GL
     canvas = document.getElementById("canvas");
@@ -36,18 +36,13 @@ function Playmode() { // Enter playtest mode
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
 
-        logic.Quit(); // Quit game in logic
+        logic.Playtest(); // Quit game in logic
     }
 }
 
-function RenderScreen(timestamp) {
-    if (logic.running) { // Game view
-        logic.Update(timestamp);
-        frame(logic.camera, logic.entities);
-    }
-    else { // Scene view
-        frame(logic.viewport, logic.entities);
-    }
+function RenderScreen(timestamp) { // Render loop
+    logic.Update(timestamp);
+    frame(logic.camera, logic.entities);
     requestAnimationFrame(RenderScreen);
 }
 
@@ -201,7 +196,7 @@ document.getElementById("canvas").onmouseup = (event) => { // Left click release
 }
 document.getElementById("canvas").oncontextmenu = (event) => { // Right click
     event.preventDefault();
-    logic.CreateEntity(new Vector3(logic.mouseX / 100, logic.mouseY / 100, 2), new Vector3(120, 180, 0), new Vector3(1, 1, 1), "file/Models/Monkey.json", "file/Images/Debug.png");
+    logic.CreateEntity(new Vector3(logic.mouseX * 0, logic.mouseY * 0, 2), new Vector3(0, 0, 0), new Vector3(1, 1, 1), "file/Models/Monkey.json", "file/Images/Debug.png");
 }
 document.getElementById("canvas").addEventListener("wheel", event => { // Scroll wheel
     const delta = Math.sign(event.deltaY);

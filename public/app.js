@@ -81,7 +81,7 @@ function CreateShaders(canvas, gl) {
 
 // Loads all relevant assets and creates a renderer for an entity to use
 function CreateRenderer(entity) {
-    LoadJSONResource('Assets/' + entity.model, function (modelError, model) {
+    LoadJSONResource(window.location.href + "/" + entity.model, function (modelError, model) {
         if (modelError) { console.error(modelError); }
         else {
             // Create buffers (all vertex data to be uploaded to the GPU)
@@ -91,7 +91,7 @@ function CreateRenderer(entity) {
             const normals = CreateStaticVertexBuffer(gl, new Float32Array(model.meshes[0].normals));
             const indexCount = [].concat.apply([], model.meshes[0].faces).length;
             const vao = Create3DInterleavedBufferVao(gl, vertices, indices, texCoords, normals, posAttrib, texCoordAttrib, normalAttrib);
-            LoadImage('Assets/' + entity.texture, function (imageError, image) {
+            LoadImage(window.location.href + "/" + entity.texture, function (imageError, image) {
                 if (imageError) { console.error(imageError); }
                 else {
                     const texture = gl.createTexture();
@@ -146,6 +146,7 @@ const fragmentShaderSourceCode = `#version 300 es
     out vec4 outputColor;
 
     void main() {
+        //vec3 ambientLightIntensity = vec3(1.0, 1.0, 1.0); // 2D testing only!
         vec3 ambientLightIntensity = vec3(0.1, 0.1, 0.1);
         vec3 sunlightIntensity = vec3(1.0, 1.0, 1.0);
         vec3 sunlightDirection = vec3(0.0, 1.0, 0.0);

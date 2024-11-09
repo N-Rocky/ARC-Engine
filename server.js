@@ -38,9 +38,7 @@ app.use(parser.json());
 app.use(expressSession);
 app.use(passport.initialize());
 app.use(passport.session());
-app.set('view engine', 'pug')
-app.listen(config.app.port, () => { console.log(`Server started on port ${config.app.port}`) })
-console.log(`Address: http://10.50.43.181:${config.app.port}/`);
+app.listen(config.app.port, () => { console.log(`Server started on port ${config.app.port}`) });
 
 // Google OAuth Strategy
 const oauth = config.oauth2;
