@@ -10,10 +10,12 @@ function CreateShaders(canvas, gl) {
 
     // Lighting information
     gl.useProgram(shaderProgram);
+    const colorUniformLocation = gl.getUniformLocation(shaderProgram, 'colorTint');
     const pointLightDirUniformLocation = gl.getUniformLocation(shaderProgram, 'pointLightDirection');
     const pointLightUniformLocation = gl.getUniformLocation(shaderProgram, 'pointLightIntensity');
-    gl.uniform3f(pointLightUniformLocation, 1.0, 1.0, 1.0);
+    gl.uniform3f(colorUniformLocation, 1.0, 1.0, 1.0);
     gl.uniform3f(pointLightDirUniformLocation, 0.0, 1.0, 0.0);
+    gl.uniform3f(pointLightUniformLocation, 1.0, 1.0, 1.0);
 
     // Camera View + Projection
     const matView = glMatrix.mat4.create();
@@ -68,12 +70,7 @@ function CreateShaders(canvas, gl) {
         gl.uniformMatrix4fv(matViewProjUniform, false, matViewProj);
 
         for (let entity of entities) {
-            if (entity.renderer) {
-                gl.bindTexture(gl.TEXTURE_2D, entity.renderer.texture);
-                gl.activeTexture(gl.TEXTURE0);
-                entity.renderer.Render(gl, matWorldUniform);
-                gl.bindTexture(gl.TEXTURE_2D, null);
-            }
+            if (entity.renderer) { entity.renderer.Render(gl, shaderProgram, matWorldUniform); }
         }
     }
     return frame;
@@ -94,6 +91,13 @@ function CreateRenderer(entity) {
             LoadImage(window.location.href + "/" + entity.texture, function (imageError, image) {
                 if (imageError) { console.error(imageError); }
                 else {
+                    const textureSize = image.width * image.height * 4; // R, G, B, a
+                    let pixels = new Uint8Array(textureSize);
+                    gl.readPixels(0, 0, image.width, image.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+                    for (let index = 0; index < textureSize; index += 4) {
+                        pixels[index] = 0;
+                    }
+
                     const texture = gl.createTexture();
                     gl.bindTexture(gl.TEXTURE_2D, texture);
                     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -139,6 +143,7 @@ const fragmentShaderSourceCode = `#version 300 es
     in vec2 fragmentTexCoord;
     in vec3 fragmentNormal;
 
+    uniform vec3 colorTint;
     uniform vec3 pointLightIntensity;
     uniform vec3 pointLightPosition;
 
@@ -149,7 +154,7 @@ const fragmentShaderSourceCode = `#version 300 es
         //vec3 ambientLightIntensity = vec3(1.0, 1.0, 1.0); // 2D testing only!
         vec3 ambientLightIntensity = vec3(0.1, 0.1, 0.1);
         vec3 sunlightIntensity = vec3(1.0, 1.0, 1.0);
-        vec3 sunlightDirection = vec3(0.0, 1.0, 0.0);
+        vec3 sunlightDirection = vec3(0.0, 1.0, -1.0);
 
         vec3 surfaceNormal = normalize(fragmentNormal);
         vec3 sunlightDirNormal = normalize(sunlightDirection);
@@ -157,9 +162,9 @@ const fragmentShaderSourceCode = `#version 300 es
 
         vec3 lightIntensity = ambientLightIntensity + sunlightIntensity * max(dot(surfaceNormal, sunlightDirNormal), 0.0);
 
-        outputColor = vec4(texel.rgb * lightIntensity, texel.a);
+        outputColor = vec4(texel.rgb * colorTint * lightIntensity, texel.a);
         //outputColor = vec4(surfaceNormal, 1.0); // View the object's normals
-        //outputColor = texture(sampler, fragmentTexCoord); // View the object's texture
+        //outputColor = texel; // View the object's texture
     }`;
 
 class Renderer {
@@ -173,7 +178,7 @@ class Renderer {
         this.numIndices = numIndices;
     }
 
-    Render(gl, matWorldUniform) {
+    Render(gl, program) {
         const position = glMatrix.vec3.fromValues(this.entity.position.x, this.entity.position.y, this.entity.position.z);
         const angle = this.entity.rotation.multiply(Math.PI / 180);
 
@@ -186,9 +191,16 @@ class Renderer {
         glMatrix.vec3.set(this.#scaleVec, this.entity.scale.x, this.entity.scale.y, this.entity.scale.z);
         glMatrix.mat4.fromRotationTranslationScale(this.#matWorld, this.#rotation, position, this.#scaleVec);
 
-        gl.uniformMatrix4fv(matWorldUniform, false, this.#matWorld);
+        const colorTint = this.entity.color;
+        const colorUniformLocation = gl.getUniformLocation(program, 'colorTint');
+        gl.uniform3f(colorUniformLocation, colorTint.r / 255, colorTint.g / 255, colorTint.b / 255);
+
+        gl.uniformMatrix4fv(gl.getUniformLocation(program, 'matWorld'), false, this.#matWorld);
         gl.bindVertexArray(this.vao);
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.activeTexture(gl.TEXTURE0);
         gl.drawElements(gl.TRIANGLES, this.numIndices, gl.UNSIGNED_SHORT, 0);
         gl.bindVertexArray(null);
+        gl.bindTexture(gl.TEXTURE_2D, null);
     }
 }

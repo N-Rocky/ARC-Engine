@@ -62,23 +62,6 @@ document.getElementById("fileSelect").onchange = async function(event) {
     logic.LoadAssets();
 }
 
-function ComponentSetup() {
-    let components = document.querySelectorAll('.component > .componentHeader');
-    for (let item of components) {
-        item.nextElementSibling.style.gridTemplateRows = '0fr';
-        item.addEventListener('mouseup', function (event) {
-            let body = event.target.nextElementSibling
-            let value = (body.style.gridTemplateRows != '0fr') ? '0fr' : '1fr';
-            body.style.gridTemplateRows = value;
-            for (let component of components) {
-                if (component != event.target) {
-                    component.nextElementSibling.style.gridTemplateRows = '0fr';
-                }
-            }
-        });
-    }
-}
-
 // Viewport traversal inputs
 let inputs = {}; let shifting = false;
 window.addEventListener("keydown", function (event) { // Key down
@@ -133,72 +116,43 @@ function ShiftViewport() {
     if (!shifting) {
         shifting = true;
         const shiftAmmount = 0.025;
-        if (inputs.lArrow) { logic.viewport.position.x += shiftAmmount; }
-        if (inputs.rArrow) { logic.viewport.position.x -= shiftAmmount; }
-        if (inputs.uArrow) { logic.viewport.position.y += shiftAmmount; }
-        if (inputs.dArrow) { logic.viewport.position.y -= shiftAmmount; }
+        if (inputs.lArrow) { logic.camera.position.x += shiftAmmount; }
+        if (inputs.rArrow) { logic.camera.position.x -= shiftAmmount; }
+        if (inputs.uArrow) { logic.camera.position.y += shiftAmmount; }
+        if (inputs.dArrow) { logic.camera.position.y -= shiftAmmount; }
         if (inputs.lArrow || inputs.rArrow || inputs.uArrow || inputs.dArrow) {
             setTimeout(function () { shifting = false; ShiftViewport(); }, 0);
         }
         else { shifting = false; }
     }
 }
+
+// Key release
 window.addEventListener("keyup", function (event) { // Key up
     if (event.code == "ArrowLeft") { inputs.lArrow = false; }
     if (event.code == "ArrowRight") { inputs.rArrow = false; }
     if (event.code == "ArrowUp") { inputs.uArrow = false; }
     if (event.code == "ArrowDown") { inputs.dArrow = false; }
 });
+
+// Mouse movement
 window.onmousemove = (event) => {
-    if (logic && logic.running) { logic.UpdateMouse(event.clientX, event.clientY); }
-    else if (logic) { logic.UpdateMouse(event.clientX, event.clientY); }
+    if (logic) { logic.UpdateMouse(event.clientX, event.clientY); }
 }
-document.getElementById("canvas").onmouseup = (event) => { // Left click release on scene view
-    logic.UpdateMouse(event.clientX, event.clientY);
-    logic.HandleClick();
 
-    if (logic.selectedEntity != -1) {
-        for (let element of document.getElementById("inspector").getElementsByClassName("component")) {
-            element.style.opacity = "100%";
-            element.style.width = "100%";
-            element.style.flexGrow = "1";
-        }
-
-        let entity = logic.entities[logic.selectedEntity];
-        document.getElementById("xPos").value = Math.floor(entity.position.x);
-        document.getElementById("yPos").value = Math.floor(entity.position.y);
-        document.getElementById("zPos").value = Math.floor(entity.position.z);
-        document.getElementById("xRot").value = Math.floor(entity.rotation.x);
-        document.getElementById("yRot").value = Math.floor(entity.rotation.y);
-        document.getElementById("zRot").value = Math.floor(entity.rotation.z);
-        document.getElementById("xScale").value = Math.floor(entity.scale.x);
-        document.getElementById("yScale").value = Math.floor(entity.scale.y);
-        document.getElementById("zScale").value = Math.floor(entity.scale.z);
-
-        document.getElementById("rSlider").value = Math.floor(entity.color[0]);
-        document.getElementById("gSlider").value = Math.floor(entity.color[1]);
-        document.getElementById("bSlider").value = Math.floor(entity.color[2]);
-        document.getElementById("massInput").value = Math.floor(entity.mass);
-        document.getElementById("massSlider").value = Math.floor(entity.mass);
-        document.getElementById("kinematicInput").checked = entity.kinematic;
-        document.getElementById("staticInput").checked = entity.static;
-        document.getElementById("gravityInput").checked = entity.gravity;
-        document.getElementById("nameInput").value = entity.name;
-        document.getElementById("tagInput").value = entity.tag;
-    }
-    else {
-        for (let element of document.getElementById("inspector").getElementsByClassName("component")) {
-            element.style.opacity = "0%";
-            element.style.width = "0%";
-            element.style.flexGrow = "0";
-        }
-    }
+// Left click release on scene view
+document.getElementById("canvas").onmouseup = (event) => {
+    logic.HandleClick(event.clientX, event.clientY);
 }
-document.getElementById("canvas").oncontextmenu = (event) => { // Right click
+
+// Right click
+document.getElementById("canvas").oncontextmenu = (event) => {
     event.preventDefault();
     logic.CreateEntity(new Vector3(logic.mouseX * 0, logic.mouseY * 0, 2), new Vector3(0, 0, 0), new Vector3(1, 1, 1), "file/Models/Monkey.json", "file/Images/Debug.png");
 }
-document.getElementById("canvas").addEventListener("wheel", event => { // Scroll wheel
+
+// Scroll wheel
+document.getElementById("canvas").addEventListener("wheel", event => {
     const delta = Math.sign(event.deltaY);
     //ScaleViewport(delta);
 });
@@ -210,45 +164,6 @@ document.getElementById("scriptText").oninput = function () {
     }
 }
 
-// Transform values
-document.getElementById("xPos").oninput = function () { UpdateComponents(); };
-document.getElementById("yPos").oninput = function () { UpdateComponents(); };
-document.getElementById("zPos").oninput = function () { UpdateComponents(); };
-document.getElementById("xRot").oninput = function () { UpdateComponents(); };
-document.getElementById("yRot").oninput = function () { UpdateComponents(); };
-document.getElementById("zRot").oninput = function () { UpdateComponents(); };
-document.getElementById("xScale").oninput = function () { UpdateComponents(); };
-document.getElementById("yScale").oninput = function () { UpdateComponents(); };
-document.getElementById("zScale").oninput = function () { UpdateComponents(); };
-
-document.getElementById("rSlider").oninput = function () { UpdateComponents(); };
-document.getElementById("gSlider").oninput = function () { UpdateComponents(); };
-document.getElementById("bSlider").oninput = function () { UpdateComponents(); };
-document.getElementById("massInput").oninput = function () { UpdateComponents(); };
-document.getElementById("kinematicInput").oninput = function () { UpdateComponents(); };
-document.getElementById("staticInput").oninput = function () { UpdateComponents(); };
-document.getElementById("gravityInput").oninput = function () { UpdateComponents(); };
-document.getElementById("nameInput").oninput = function () { UpdateComponents(); };
-document.getElementById("tagInput").oninput = function () { UpdateComponents(); };
-
-function UpdateComponents() { // Updates the entities attributes to the component values
-    logic.entities[logic.selectedEntity].position = new Vector3(parseInt(document.getElementById("xPos").value), parseInt(document.getElementById("yPos").value), parseInt(document.getElementById("zPos").value));
-    logic.entities[logic.selectedEntity].rotation = new Vector3(parseInt(document.getElementById("xRot").value), parseInt(document.getElementById("yRot").value), parseInt(document.getElementById("zRot").value));
-    logic.entities[logic.selectedEntity].scale = new Vector3(parseInt(document.getElementById("xScale").value), parseInt(document.getElementById("yScale").value), parseInt(document.getElementById("zScale").value));
-
-    logic.entities[logic.selectedEntity].color[0] = parseInt(document.getElementById("rSlider").value);
-    logic.entities[logic.selectedEntity].color[1] = parseInt(document.getElementById("gSlider").value);
-    logic.entities[logic.selectedEntity].color[2] = parseInt(document.getElementById("bSlider").value);
-    logic.entities[logic.selectedEntity].mass = parseInt(document.getElementById("massInput").value);
-    logic.entities[logic.selectedEntity].kinematic = document.getElementById("kinematicInput").checked;
-    logic.entities[logic.selectedEntity].static = document.getElementById("staticInput").checked;
-    logic.entities[logic.selectedEntity].gravity = document.getElementById("gravityInput").checked;
-
-    logic.entities[logic.selectedEntity].name = document.getElementById("nameInput").value;
-    logic.entities[logic.selectedEntity].tag = document.getElementById("tagInput").value;
-}
-
 window.onload = function () {
     init(); brython();
-    ComponentSetup();
 }

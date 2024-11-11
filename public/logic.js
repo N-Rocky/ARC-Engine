@@ -112,24 +112,30 @@ class Logic {
     }
 
     UpdateMouse(x, y) { // Mouse movement
-        this.#mouseX = -x;
-        this.#mouseY = -y;
-        if (!this.#running) { // Scene view
-            // Shift in relation to the scene camera
-            this.#mouseX -= (-this.#viewport.position.x + this.#viewport.resolution.x / 2);
-            this.#mouseY -= (-this.#viewport.position.y + this.#viewport.resolution.y / 2);
-        }
-        else {
-            // Shift in relation to the game camera
-            this.#mouseX -= (-this.#camera.position.x + this.#camera.resolution.x / 2);
-            this.#mouseY -= (-this.#camera.position.y + this.#camera.resolution.y / 2);
-        }
+        this.#mouseX = x;
+        this.#mouseY = y;
+        //if (!this.#running) { // Scene view
+        //    // Shift in relation to the scene camera
+        //    this.#mouseX -= (-this.#viewport.position.x + this.#viewport.resolution.x / 2);
+        //    this.#mouseY -= (-this.#viewport.position.y + this.#viewport.resolution.y / 2);
+        //}
+        //else {
+        //    // Shift in relation to the game camera
+        //    this.#mouseX -= (-this.#camera.position.x + this.#camera.resolution.x / 2);
+        //    this.#mouseY -= (-this.#camera.position.y + this.#camera.resolution.y / 2);
+        //}
     }
 
-    HandleClick() { // Called every time the user clicks
+    HandleClick(x, y) { // Called every time the user clicks
+        this.UpdateMouse(x, y);
+        // Raycast to find objects clicked
         this.#selectedEntity += 1;
         if (this.#selectedEntity >= this.#sceneEntities.length) {
             this.#selectedEntity = 0;
+        }
+
+        if (!this.#running) {
+            this.#sceneEntities[this.#selectedEntity].Inspect();
         }
     }
 
@@ -277,7 +283,7 @@ class Logic {
     get mouseX() { return this.#mouseX; }
     get mouseY() { return this.#mouseY; }
     get viewport() { return this.#viewport; }
-    get camera() { return this.#camera; }
+    get camera() { return this.#running ? this.#camera : this.#viewport; }
     get transpiler() { return this.#transpiler; }
 }
 
@@ -365,7 +371,7 @@ class Entity { // Basis of every game object
         this.mass = 2; this.elasticity = 0.6;
         this.velocity = new Vector3(); this.acceleration = new Vector3();
         this.tag = "Default";
-        this.color = [255, 255, 255];
+        this.color = {r: 255, g: 255, b: 255};
         if (logic.transpiler) { this.behavior = "def Start():\n\n\ndef Update():\n\n\ndef KeyPress(key):\n\n\ndef Collide(other):\n\n"; }
         else { this.behavior = "function Start() {\n\n}\n\nfunction Update() {\n\n}\n\nfunction KeyPress(key) {\n\n}\n\nfunction Collide(other) {\n\n}"; }
 
@@ -407,6 +413,64 @@ class Entity { // Basis of every game object
         entity.color = data.color;
         entity.behavior = data.behavior;
         return entity;
+    }
+
+    Inspect() {
+        const inspector = document.getElementById("inspector");
+        while (inspector.lastElementChild.classList.contains("component")) {
+            inspector.removeChild(inspector.lastElementChild);
+        }
+
+        const components = ["Identity", "Transform", "Graphics", "Physics", "Behavior"];
+        for (let type of components) {
+            const component = document.createElement("div"); component.classList.add("component");
+            const header = document.createElement("div"); header.classList.add("componentHeader"); header.textContent = type;
+            header.onclick = () => { body.style.gridTemplateRows = (body.style.gridTemplateRows == '1fr') ? '0fr' : '1fr'; }
+            const body = document.createElement("div"); body.classList.add("componentBody");
+            component.appendChild(header); component.appendChild(body);
+            const content = document.createElement("div"); body.appendChild(content);
+
+            if (type == "Identity") {
+                for (let attribute of ["name", "tag"]) {
+                    const input = document.createElement("INPUT"); input.classList.add("componentItem");
+                    input.type = "text"; input.name = attribute; input.value = this[attribute];
+                    const label = document.createElement("Label"); label.classList.add("componentItem");
+                    label.htmlFor = attribute; label.textContent = `${attribute}:`;
+                    input.oninput = () => { this[attribute] = input.value; }
+                    content.appendChild(label); content.appendChild(input);
+                }
+            }
+            else if (type == "Transform") {
+                for (let attribute of ["position", "rotation", "scale"]) {
+                    for (let axis of ["x", "y", "z"]) {
+                        const input = document.createElement("INPUT"); input.classList.add("componentItem");
+                        input.type = "number"; input.name = attribute + axis; input.value = this[attribute][axis];
+                        const label = document.createElement("Label"); label.classList.add("componentItem");
+                        label.htmlFor = attribute + axis; label.textContent = `${axis} ${attribute}:`;
+                        input.oninput = () => { this[attribute][axis] = parseInt(input.value); }
+                        content.appendChild(label); content.appendChild(input);
+                    }
+                }
+            }
+            else if (type == "Graphics") {
+                for (let color of ["r", "g", "b"]) {
+                    const input = document.createElement("INPUT"); input.classList.add("componentItem");
+                    input.type = "number"; input.name = color; input.value = this.color[color];
+                    const label = document.createElement("Label"); label.classList.add("componentItem");
+                    label.htmlFor = color; label.textContent = `${color}:`;
+                    input.oninput = () => { this.color[color] = parseInt(input.value); }
+                    content.appendChild(label); content.appendChild(input);
+                }
+            }
+            else if (type == "Physics") {
+                
+            }
+            else if (type == "Behavior") {
+
+            }
+
+            inspector.appendChild(component);
+        }
     }
 
     Relocate() { // Move the entity based on its current acceleration and velocity
