@@ -50,28 +50,40 @@ body {
     text-decoration: none;
 }
 
+#toolbar {
+    display: flex;
+    flex-direction: column;
+    margin-right: auto;
+    height: 100%;
+    width: 5dvw;
+    background-color: var(--primary);
+}
+
 #project {
     display: flex;
     flex-direction: column;
     margin-right: auto;
     height: 100%;
-    width: 80dvw;
+    width: 75dvw;
     background-color: var(--primary);
 }
 #canvas {
     background-image: url('Resources/Background.png');
     background-size: 100% 100%;
+    cursor: grab;
 }
 .scene {
     position: relative;
     width: 100%;
-    height: 75%;
+    height: 100%;
+    z-index: 0;
     border: 2px solid var(--highlight);
 }
 .game {
     position: absolute;
     width: 100dvw;
     height: 100dvh;
+    z-index: 1;
     left: 0;
     right: 0;
     align-self: center;
@@ -147,19 +159,20 @@ input[type="file"] {
 #inspector {
     display: flex;
     flex-direction: column;
+    justify-content: left;
     right: 0;
     width: 20dvw;
     height: 100%;
     background-color: var(--windowColor);
 }
-#projectSettings {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    opacity: 100%;
-    height: auto;
-    background-color: var(--windowColor);
-    transition: 0.2s;
+.entity {
+    width: 100%;
+    margin-top: 1dvh;
+    padding-left: 1dvw;
+    border-top: 1px solid var(--highlight);
+    border-bottom: 1px solid var(--highlight);
+    background-color: gray;
+    cursor: pointer;
 }
 .component {
     display: flex;

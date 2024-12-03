@@ -62,9 +62,33 @@ document.getElementById("fileSelect").onchange = async function(event) {
     logic.LoadAssets();
 }
 
+function ListEntities() { // List the entity hierarchy
+    const inspector = document.getElementById("inspector");
+    while (inspector.lastElementChild.id != "inspectorHeader") {
+        inspector.removeChild(inspector.lastElementChild);
+    }
+    for (let entity of logic.entities) {
+        const item = document.createElement("div");
+        item.classList.add("entity");
+        item.textContent = entity.name;
+        item.onclick = () => {
+            logic.selectedEntity = logic.entities.indexOf(entity);
+            entity.Inspect();
+        }
+        inspector.appendChild(item);
+    }
+}
+
+// Viewing all entities in the scene
+document.getElementById("inspectorHeader").onclick = ListEntities;
+
 // Viewport traversal inputs
 let inputs = {}; let shifting = false;
 window.addEventListener("keydown", function (event) { // Key down
+    if (event.ctrlKey && event.code == "KeyP") { // Playing the game
+        event.preventDefault();
+        Playmode();
+    }
     if (event.ctrlKey && event.code === "KeyS") { // Saving the project
         event.preventDefault();
         logic.SaveProject();
@@ -94,8 +118,6 @@ window.addEventListener("keydown", function (event) { // Key down
     logic.currentKey = event.key;
 
     switch (event.code) {
-        case "KeyP":
-            Playmode(); break;
         case "Delete":
             if (logic.selectedEntity != -1) {
                 logic.entities[logic.selectedEntity].Delete();
@@ -107,20 +129,32 @@ window.addEventListener("keydown", function (event) { // Key down
             break;
     }
 
-    if (event.code == "ArrowLeft" && !inputs.lArrow) { inputs.lArrow = true; ShiftViewport(); }
-    if (event.code == "ArrowRight" && !inputs.rArrow) { inputs.rArrow = true; ShiftViewport(); }
-    if (event.code == "ArrowUp" && !inputs.uArrow) { inputs.uArrow = true; ShiftViewport(); }
-    if (event.code == "ArrowDown" && !inputs.dArrow) { inputs.dArrow = true; ShiftViewport(); }
+    if (event.code == "KeyW" && !inputs.wKey) { inputs.wKey = true; ShiftViewport(); }
+    if (event.code == "KeyA" && !inputs.aKey) { inputs.aKey = true; ShiftViewport(); }
+    if (event.code == "KeyS" && !inputs.sKey) { inputs.sKey = true; ShiftViewport(); }
+    if (event.code == "KeyD" && !inputs.dKey) { inputs.dKey = true; ShiftViewport(); }
 });
 function ShiftViewport() {
-    if (!shifting) {
+    if (!shifting && rightClick) {
         shifting = true;
-        const shiftAmmount = 0.025;
-        if (inputs.lArrow) { logic.camera.position.x += shiftAmmount; }
-        if (inputs.rArrow) { logic.camera.position.x -= shiftAmmount; }
-        if (inputs.uArrow) { logic.camera.position.y += shiftAmmount; }
-        if (inputs.dArrow) { logic.camera.position.y -= shiftAmmount; }
-        if (inputs.lArrow || inputs.rArrow || inputs.uArrow || inputs.dArrow) {
+        const shiftAmmount = 0.01;
+        if (inputs.wKey) {
+            const forwards = logic.camera.rotation.forward.multiply(shiftAmmount);
+            logic.camera.position = logic.camera.position.add(forwards);
+        }
+        if (inputs.aKey) {
+            const leftwards = logic.camera.rotation.right.multiply(-shiftAmmount);
+            logic.camera.position = logic.camera.position.add(leftwards);
+        }
+        if (inputs.sKey) {
+            const backwards = logic.camera.rotation.forward.multiply(-shiftAmmount);
+            logic.camera.position = logic.camera.position.add(backwards);
+        }
+        if (inputs.dKey) {
+            const rightwards = logic.camera.rotation.right.multiply(shiftAmmount);
+            logic.camera.position = logic.camera.position.add(rightwards);
+        }
+        if (inputs.wKey || inputs.aKey || inputs.sKey || inputs.dKey) {
             setTimeout(function () { shifting = false; ShiftViewport(); }, 0);
         }
         else { shifting = false; }
@@ -129,32 +163,69 @@ function ShiftViewport() {
 
 // Key release
 window.addEventListener("keyup", function (event) { // Key up
-    if (event.code == "ArrowLeft") { inputs.lArrow = false; }
-    if (event.code == "ArrowRight") { inputs.rArrow = false; }
-    if (event.code == "ArrowUp") { inputs.uArrow = false; }
-    if (event.code == "ArrowDown") { inputs.dArrow = false; }
+    if (event.code == "KeyW") { inputs.wKey = false; }
+    if (event.code == "KeyA") { inputs.aKey = false; }
+    if (event.code == "KeyS") { inputs.sKey = false; }
+    if (event.code == "KeyD") { inputs.dKey = false; }
 });
+
+// Mouse clicking on canvas
+let leftClick = false; let rightClick = false;
+document.getElementById("canvas").onmousedown = (event) => { // Mouse down
+    if (event.which == 1) { // Left mouse
+        //logic.HandleClick(event.clientX, event.clientY);
+        leftClick = true;
+        canvas.style.cursor = "grabbing";
+    }
+    else if (event.which == 2) { // Middle mouse
+        leftClick = true;
+        rightClick = true;
+        canvas.style.cursor = "move";
+    }
+    else if (event.which == 3) { // Right mouse
+        rightClick = true;
+        canvas.style.cursor = "crosshair";
+    }
+}
+window.onmouseup = (event) => { // Mouse up
+    if (event.which == 1) { // Left mouse
+        //logic.CreateEntity(new Vector3(logic.mouseX * 0, logic.mouseY * 0, 2), new Vector3(0, 0, 0), new Vector3(1, 1, 1), "file/Models/Monkey.json", "file/Images/Debug.png");
+        leftClick = false;
+        canvas.style.cursor = "grab";
+    }
+    else if (event.which == 2) { // Middle mouse
+        leftClick = false;
+        rightClick = false;
+        canvas.style.cursor = "grab";
+    }
+    else if (event.which == 3) { // Right 
+        event.preventDefault();
+        rightClick = false;
+        canvas.style.cursor = "grab";
+    }
+}
 
 // Mouse movement
 window.onmousemove = (event) => {
     if (logic) { logic.UpdateMouse(event.clientX, event.clientY); }
-}
-
-// Left click release on scene view
-document.getElementById("canvas").onmouseup = (event) => {
-    logic.HandleClick(event.clientX, event.clientY);
-}
-
-// Right click
-document.getElementById("canvas").oncontextmenu = (event) => {
-    event.preventDefault();
-    logic.CreateEntity(new Vector3(logic.mouseX * 0, logic.mouseY * 0, 2), new Vector3(0, 0, 0), new Vector3(1, 1, 1), "file/Models/Monkey.json", "file/Images/Debug.png");
+    if (!logic.running) {
+        if (leftClick) {
+            logic.camera.position = logic.camera.position.add(logic.camera.rotation.up.multiply(event.movementY / 100));
+            logic.camera.position = logic.camera.position.add(logic.camera.rotation.right.multiply(-event.movementX / 100));
+        }
+        if (rightClick) {
+            logic.camera.rotation.y -= event.movementX / 10;
+            logic.camera.rotation.x += event.movementY / 10;
+        }
+    }
 }
 
 // Scroll wheel
 document.getElementById("canvas").addEventListener("wheel", event => {
-    const delta = Math.sign(event.deltaY);
-    //ScaleViewport(delta);
+    const delta = -Math.sign(event.deltaY);
+    if (logic && !logic.running) {
+        logic.camera.position = logic.camera.position.add(logic.camera.rotation.forward.multiply(delta));
+    }
 });
 
 // Updating behavior
@@ -164,6 +235,10 @@ document.getElementById("scriptText").oninput = function () {
     }
 }
 
+// Prevent default right click behavior
+window.oncontextmenu = (event) => { event.preventDefault(); }
+
+// Initial methods on window load
 window.onload = function () {
     init(); brython();
 }

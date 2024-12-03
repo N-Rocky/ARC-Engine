@@ -114,29 +114,11 @@ class Logic {
     UpdateMouse(x, y) { // Mouse movement
         this.#mouseX = x;
         this.#mouseY = y;
-        //if (!this.#running) { // Scene view
-        //    // Shift in relation to the scene camera
-        //    this.#mouseX -= (-this.#viewport.position.x + this.#viewport.resolution.x / 2);
-        //    this.#mouseY -= (-this.#viewport.position.y + this.#viewport.resolution.y / 2);
-        //}
-        //else {
-        //    // Shift in relation to the game camera
-        //    this.#mouseX -= (-this.#camera.position.x + this.#camera.resolution.x / 2);
-        //    this.#mouseY -= (-this.#camera.position.y + this.#camera.resolution.y / 2);
-        //}
     }
 
     HandleClick(x, y) { // Called every time the user clicks
         this.UpdateMouse(x, y);
         // Raycast to find objects clicked
-        this.#selectedEntity += 1;
-        if (this.#selectedEntity >= this.#sceneEntities.length) {
-            this.#selectedEntity = 0;
-        }
-
-        if (!this.#running) {
-            this.#sceneEntities[this.#selectedEntity].Inspect();
-        }
     }
 
     Playtest() { // Start and stop the game
@@ -169,6 +151,7 @@ class Logic {
         let entities = this.#running ? this.#gameEntities : this.#sceneEntities;
         const entity = new Entity(position, rotation, scale, model, texture, "Object" + (entities.length + 1));
         entities.push(entity);
+        return entity;
     }
 
     async SaveProject() {
@@ -279,6 +262,7 @@ class Logic {
     set currentKey(value) { this.#currentKey = value; }
     get entities() { return this.#running ? this.#gameEntities : this.#sceneEntities; }
     get selectedEntity() { return this.#selectedEntity; }
+    set selectedEntity(value) { this.#selectedEntity = value; }
     get running() { return this.#running; }
     get mouseX() { return this.#mouseX; }
     get mouseY() { return this.#mouseY; }
@@ -303,9 +287,7 @@ class Vector2 { // 2D Vectors
         return new Vector2(this.x * factor, this.y * factor);
     }
     get magnitude() { return Math.sqrt(this.x ** 2 + this.y ** 2); }
-    get normalized() {
-        return new Vector2(-this.y, this.x).unit();
-    }
+    get normalized() { return new Vector2(-this.y, this.x).unit; }
     get unit() {
         if (this.magnitude == 0) { return new Vector2(); }
         return new Vector2(this.x / this.magnitude, this.y / this.magnitude);
@@ -322,29 +304,63 @@ class Vector3 { // 3D Vectors
         this.y = y;
         this.z = z;
     }
-    add(vector) {
-        return new Vector3(this.x + vector.x, this.y + vector.y, this.z + vector.z);
-    }
-    subtract(vector) {
-        return new Vector3(this.x - vector.x, this.y - vector.y, this.z - vector.z);
-    }
-    multiply(factor) {
-        return new Vector3(this.x * factor, this.y * factor, this.z * factor);
+    add(vector) { return new Vector3(this.x + vector.x, this.y + vector.y, this.z + vector.z); }
+    subtract(vector) { return new Vector3(this.x - vector.x, this.y - vector.y, this.z - vector.z); }
+    multiply(factor) { return new Vector3(this.x * factor, this.y * factor, this.z * factor); }
+    dot(vector) { return this.x * vector.x + this.y * vector.y + this.z * vector.z; }
+    trigify(angle) { return new Vector2(Math.cos(angle * Math.PI / 180), Math.sin(angle * Math.PI / 180)); }
+    cross(vector) {
+        const product = new Vector3();
+        product.x = (this.y * vector.z) - (this.z * vector.y);
+        product.y = -1 * ((this.x * vector.z) - (this.z * vector.x));
+        product.z = (this.x * vector.y) - (this.y * vector.x);
+        return product;
     }
     get magnitude() { return Math.sqrt(this.x ** 2 + this.y ** 2 + this.z ** 2); }
-    get normalized() {
-        return new Vector3(this.z, -this.y, this.x).unit();
-    }
+    get normalized() { return new Vector3(this.z, -this.y, this.x).unit; }
     get unit() {
         if (this.magnitude == 0) { return new Vector3(); }
         return new Vector3(this.x / this.magnitude, this.y / this.magnitude, this.z / this.magnitude);
     }
-    get clone() {
-        return new Vector3(this.x, this.y, this.z);
+
+    get clone() { return new Vector3(this.x, this.y, this.z); }
+
+    get xValues() { return new Vector2(Math.cos(this.x * Math.PI / 180), Math.sin(this.x * Math.PI / 180)); }
+    get yValues() { return new Vector2(Math.cos(this.y * Math.PI / 180), Math.sin(this.y * Math.PI / 180)); }
+    get zValues() { return new Vector2(Math.cos(this.z * Math.PI / 180), Math.sin(this.z * Math.PI / 180)); }
+
+    get matrix() {
+        const ry = [[this.yValues.x, 0, this.yValues.y], [0, 1, 0], [-this.yValues.y, 0, this.yValues.x]];
+        const rx = [[1, 0, 0], [0, this.xValues.x, -this.xValues.y], [0, this.xValues.y, this.xValues.x]];
+        const rz = [[this.zValues.x, -this.zValues.y, 0], [this.zValues.y, this.zValues.x, 0], [0, 0, 1]];
+        const matrix = [[ry[0][0] * rx[0][0] * rz[0][0], ry[0][1] * rx[0][1] * rz[0][1], ry[0][2] * rx[0][2] * rz[0][2]],
+            [ry[1][0] * rx[1][0] * rz[1][0], ry[1][1] * rx[1][1] * rz[1][1], ry[1][2] * rx[1][2] * rz[1][2]],
+            [ry[2][0] * rx[2][0] * rz[2][0], ry[2][1] * rx[2][1] * rz[2][1], ry[2][2] * rx[2][2] * rz[2][2]]
+        ];
+        return matrix;
     }
-    static dot(vector1, vector2) {
-        return vector1.x * vector2.x + vector1.y * vector2.y + vector1.z * vector2.z;
+
+    get forward() { return new Vector3(this.yValues.y * this.xValues.x, -this.xValues.y, this.yValues.x * this.xValues.x); }
+
+    // Fails if X, Y, and Z are rotated
+    // I have two values that range from -1 to 1 (inclusive). What math equation gives me a 1 if both values are equal, a 0 if one value is 1 and the other is 0 (or one value is -1 and the other is 0), and a -1 if one value is 1 and the other is -1.
+    get up() {
+        return new Vector3(this.yValues.y * this.xValues.y, this.xValues.x * this.zValues.x, this.xValues.y * this.yValues.x);
+        
+        /*return new Vector3(
+            Math.max(-this.yValues.x * this.xValues.y) * (this.trigify(this.y - this.z).y),
+            this.xValues.x * this.zValues.x,
+            -this.xValues.y * this.yValues.x * this.zValues.y
+        );*/
     }
+    //get up() { return new Vector3(this.xValues.y * this.yValues.y, this.xValues.x, this.xValues.y * this.yValues.x); }
+    //get up() { return this.forward.cross(this.right); }
+    
+    // Fails if Z is rotated
+    //get right() { return new Vector3(this.yValues.x, 0, -this.yValues.y).multiply(this.zValues.x).add(new Vector3(-this.yValues.x * this.xValues.y, this.xValues.x, -this.yValues.y * this.xValues.y).multiply(this.zValues.y)); }
+    get right() { return new Vector3(-this.yValues.x, 0, this.yValues.y); }
+    //get right() { return this.forward.cross(new Vector3(0, 1, 0)); }
+
 }
 
 // Basis for the game and viewport cameras
@@ -417,7 +433,7 @@ class Entity { // Basis of every game object
 
     Inspect() {
         const inspector = document.getElementById("inspector");
-        while (inspector.lastElementChild.classList.contains("component")) {
+        while (inspector.lastElementChild.id != "inspectorHeader") {
             inspector.removeChild(inspector.lastElementChild);
         }
 
@@ -447,7 +463,7 @@ class Entity { // Basis of every game object
                         input.type = "number"; input.name = attribute + axis; input.value = this[attribute][axis];
                         const label = document.createElement("Label"); label.classList.add("componentItem");
                         label.htmlFor = attribute + axis; label.textContent = `${axis} ${attribute}:`;
-                        input.oninput = () => { this[attribute][axis] = parseInt(input.value); }
+                        input.oninput = () => { this[attribute][axis] = parseFloat(input.value); }
                         content.appendChild(label); content.appendChild(input);
                     }
                 }
@@ -466,7 +482,7 @@ class Entity { // Basis of every game object
                 
             }
             else if (type == "Behavior") {
-
+                
             }
 
             inspector.appendChild(component);

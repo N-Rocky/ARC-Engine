@@ -22,3 +22,8 @@
 > ### Frontend
 > - Index file contains all of the rendering logic and receives its data from the external logic file.
 > - Index file handles all GUI elements and the starting/stopping of the game.
+
+> ### Key Implementations
+> - Translating Objects: X-axis is global, Y-axis is local to X-axis, and Z-axis is local to Y-axis (*FIXED)
+> - Needs to be Y-axis as global, then X-axis, then Z-axis
+> - Blender is Z-axis, Y-axis, X-axis

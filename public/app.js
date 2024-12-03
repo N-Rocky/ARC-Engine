@@ -33,20 +33,19 @@ function CreateShaders(canvas, gl) {
         
         // Reference the camera and target
         const pos = camera.position;
-        let rot = camera.rotation;
+        const rot = camera.rotation;
 
         const rotX = new Vector2(Math.cos(glMatrix.glMatrix.toRadian(rot.x)), Math.sin(glMatrix.glMatrix.toRadian(rot.x)));
         const rotY = new Vector2(Math.cos(glMatrix.glMatrix.toRadian(rot.y)), Math.sin(glMatrix.glMatrix.toRadian(rot.y)));
         const rotZ = new Vector2(Math.cos(glMatrix.glMatrix.toRadian(rot.z)), Math.sin(glMatrix.glMatrix.toRadian(rot.z)));
 
-        rot = new Vector3(rotY.y * rotX.x, rotX.y, rotY.x * rotX.x);
-
-        const target = pos.add(rot);
+        const target = pos.add(rot.forward);
 
         // Arg 1 = position, Arg 2 = look at, Arg 3 = up
         glMatrix.mat4.lookAt(matView, glMatrix.vec3.fromValues(pos.x, pos.y, pos.z),
             glMatrix.vec3.fromValues(target.x, target.y, target.z),
-            glMatrix.vec3.fromValues(-rotZ.y * rotY.x, rotX.x * rotZ.x, -rotX.y * rotY.x * rotZ.y));
+            glMatrix.vec3.fromValues(rot.up.x, rot.up.y, rot.up.z));
+            //glMatrix.vec3.fromValues(-rotZ.y * rotY.x, rotX.x * rotZ.x, -rotX.y * rotY.x * rotZ.y));
 
         // Arg 1 = field of view, Arg 2 = aspect ratio, Arg 3 = near clipping, Arg 4 = far clipping
         glMatrix.mat4.perspective(matProj, glMatrix.glMatrix.toRadian(camera.fieldOfView), canvas.width / canvas.height, 0.1, 100);
@@ -186,7 +185,8 @@ class Renderer {
         glMatrix.quat.setAxisAngle(rotX, glMatrix.vec3.fromValues(1, 0, 0), angle.x);
         glMatrix.quat.setAxisAngle(rotY, glMatrix.vec3.fromValues(0, 1, 0), angle.y);
         glMatrix.quat.setAxisAngle(rotZ, glMatrix.vec3.fromValues(0, 0, 1), angle.z);
-        glMatrix.quat.mul(this.#rotation, rotX, rotY); glMatrix.quat.mul(this.#rotation, this.#rotation, rotZ);
+        glMatrix.quat.mul(this.#rotation, rotY, rotX); glMatrix.quat.mul(this.#rotation, this.#rotation, rotZ);
+        // Order: rotY, rotX, rotZ -> Y is global, X is local to Y, Z is local to X
 
         glMatrix.vec3.set(this.#scaleVec, this.entity.scale.x, this.entity.scale.y, this.entity.scale.z);
         glMatrix.mat4.fromRotationTranslationScale(this.#matWorld, this.#rotation, position, this.#scaleVec);

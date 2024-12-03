@@ -8,10 +8,14 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+    <!-- Toolbar -->
+    <div id="toolbar"></div>
+    
     <!-- Project Window -->
     <div id="project">
         <!-- Scene/Game Window -->
         <canvas id="canvas" class="scene"></canvas>
+        
         <!-- Taskbar -->
         <div id="taskbar">
             <label id="fileSelector" for="fileSelect">+</label>
@@ -22,10 +26,7 @@
 
     <!-- Inspector Window -->
     <div id="inspector">
-        <div class="componentHeader" style="color: white;">Inspector</div>
-        <div id="projectSettings">
-            
-        </div>
+        <div class="componentHeader" id="inspectorHeader" style="color: white; border-color: var(--secondary);">Inspector</div>
     </div>
 
     <!-- Terminal Window -->
