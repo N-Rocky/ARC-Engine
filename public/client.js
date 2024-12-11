@@ -8,41 +8,33 @@ async function init() { // Initialize graphics and logic
     gl = canvas.getContext('webgl2');
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
+    canvas.oncontextmenu = (event) => { event.preventDefault(); }
 
     // Logic and project data
     logic = new Logic();
-    logic.LoadProject();
-    logic.LoadAssets();
-
+    
     // Generate shaders and frame method
     frame = CreateShaders(canvas, gl);
     RenderScreen(); // Begin render loop
+
+    // Load the project
+    await logic.LoadProject();
+    await logic.LoadAssets();
+    ListEntities();
 }
 
 function Playmode() { // Enter playtest mode
-    if (!logic.running) { // Run game
-
-        canvas.classList.remove('scene');
-        canvas.classList.add('game');
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
-        
-        logic.Playtest(); // Play game in logic
-    }
-    else { // Close game
-
-        canvas.classList.remove('game');
-        canvas.classList.add('scene');
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
-
-        logic.Playtest(); // Quit game in logic
-    }
+    canvas.classList.toggle('game');
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    
+    logic.Playtest(); // Play or Quit game in 
+    logic.selected = null; ListEntities();
 }
 
 function RenderScreen(timestamp) { // Render loop
     logic.Update(timestamp);
-    frame(logic.camera, logic.entities);
+    frame(logic.camera, logic.entities, logic.selected);
     requestAnimationFrame(RenderScreen);
 }
 
@@ -67,20 +59,54 @@ function ListEntities() { // List the entity hierarchy
     while (inspector.lastElementChild.id != "inspectorHeader") {
         inspector.removeChild(inspector.lastElementChild);
     }
+
     for (let entity of logic.entities) {
         const item = document.createElement("div");
         item.classList.add("entity");
         item.textContent = entity.name;
         item.onclick = () => {
-            logic.selectedEntity = logic.entities.indexOf(entity);
+            logic.selected = entity;
             entity.Inspect();
         }
         inspector.appendChild(item);
     }
+
+    logic.selected = null;
 }
 
 // Viewing all entities in the scene
 document.getElementById("inspectorHeader").onclick = ListEntities;
+
+// Creating new entities
+document.getElementById("plusIcon").onclick = () => {
+    logic.CreateEntity(logic.camera.position.add(logic.camera.rotation.forward.multiply(5)),
+        new Vector3(0, 0, 0), new Vector3(1, 1, 1),
+        "file/Models/Cube.json", "file/Images/Square.png");
+    ListEntities();
+}
+
+// Duplicates the selected entity
+document.getElementById("duplicateIcon").onclick = () => {
+    if (logic.selected) {
+        logic.entities.push(logic.selected.Clone());
+        ListEntities();
+    }
+}
+
+// Saving the current state of the scene
+document.getElementById("saveIcon").onclick = () => {
+    if (confirm("Save the project in its current state?")) {
+        logic.SaveProject();
+    }
+}
+
+// Discard all of the changes since last save
+document.getElementById("discardIcon").onclick = async function() {
+    if (confirm("Discard all changes since last save?")) {
+        await logic.LoadProject();
+        ListEntities();
+    }
+}
 
 // Viewport traversal inputs
 let inputs = {}; let shifting = false;
@@ -89,14 +115,20 @@ window.addEventListener("keydown", function (event) { // Key down
         event.preventDefault();
         Playmode();
     }
+
     if (event.ctrlKey && event.code === "KeyS") { // Saving the project
         event.preventDefault();
-        logic.SaveProject();
+        if (confirm("Save the project in its current state?")) {
+            RenderScreen(0);
+            logic.SaveProject();
+        }
     }
 
     if (event.ctrlKey && event.code === "KeyL") { // Loading the project
         event.preventDefault();
-        logic.LoadProject();
+        if (confirm("Discard all changes since last save?")) {
+            logic.LoadProject();
+        }
     }
 
     if (event.code == "Tab") { // Terminal window
@@ -107,8 +139,8 @@ window.addEventListener("keydown", function (event) { // Key down
         }
         else {
             document.getElementById("terminal").style.display = "flex";
-            if (logic.selectedEntity != -1) {
-                document.getElementById("scriptText").value = logic.entities[logic.selectedEntity].behavior;
+            if (logic.selected != null) {
+                document.getElementById("scriptText").value = logic.selected.behavior;
             }
         }
     }
@@ -119,8 +151,9 @@ window.addEventListener("keydown", function (event) { // Key down
 
     switch (event.code) {
         case "Delete":
-            if (logic.selectedEntity != -1) {
-                logic.entities[logic.selectedEntity].Delete();
+            if (logic.selected != null) {
+                logic.selected.Delete();
+                ListEntities();
             }
             break;
         case "KeyT":
@@ -133,6 +166,8 @@ window.addEventListener("keydown", function (event) { // Key down
     if (event.code == "KeyA" && !inputs.aKey) { inputs.aKey = true; ShiftViewport(); }
     if (event.code == "KeyS" && !inputs.sKey) { inputs.sKey = true; ShiftViewport(); }
     if (event.code == "KeyD" && !inputs.dKey) { inputs.dKey = true; ShiftViewport(); }
+    if (event.code == "KeyQ" && !inputs.qKey) { inputs.qKey = true; ShiftViewport(); }
+    if (event.code == "KeyE" && !inputs.eKey) { inputs.eKey = true; ShiftViewport(); }
 });
 function ShiftViewport() {
     if (!shifting && rightClick) {
@@ -154,7 +189,15 @@ function ShiftViewport() {
             const rightwards = logic.camera.rotation.right.multiply(shiftAmmount);
             logic.camera.position = logic.camera.position.add(rightwards);
         }
-        if (inputs.wKey || inputs.aKey || inputs.sKey || inputs.dKey) {
+        if (inputs.qKey) {
+            const downwards = logic.camera.rotation.up.multiply(-shiftAmmount);
+            logic.camera.position = logic.camera.position.add(downwards);
+        }
+        if (inputs.eKey) {
+            const upwards = logic.camera.rotation.up.multiply(shiftAmmount);
+            logic.camera.position = logic.camera.position.add(upwards);
+        }
+        if (inputs.wKey || inputs.aKey || inputs.sKey || inputs.dKey || inputs.qKey || inputs.eKey) {
             setTimeout(function () { shifting = false; ShiftViewport(); }, 0);
         }
         else { shifting = false; }
@@ -167,6 +210,8 @@ window.addEventListener("keyup", function (event) { // Key up
     if (event.code == "KeyA") { inputs.aKey = false; }
     if (event.code == "KeyS") { inputs.sKey = false; }
     if (event.code == "KeyD") { inputs.dKey = false; }
+    if (event.code == "KeyQ") { inputs.qKey = false; }
+    if (event.code == "KeyE") { inputs.eKey = false; }
 });
 
 // Mouse clicking on canvas
@@ -189,7 +234,6 @@ document.getElementById("canvas").onmousedown = (event) => { // Mouse down
 }
 window.onmouseup = (event) => { // Mouse up
     if (event.which == 1) { // Left mouse
-        //logic.CreateEntity(new Vector3(logic.mouseX * 0, logic.mouseY * 0, 2), new Vector3(0, 0, 0), new Vector3(1, 1, 1), "file/Models/Monkey.json", "file/Images/Debug.png");
         leftClick = false;
         canvas.style.cursor = "grab";
     }
@@ -230,13 +274,10 @@ document.getElementById("canvas").addEventListener("wheel", event => {
 
 // Updating behavior
 document.getElementById("scriptText").oninput = function () {
-    if (logic.selectedEntity != -1) {
-        logic.entities[logic.selectedEntity].behavior = document.getElementById("scriptText").value;
+    if (logic.selected != null) {
+        logic.selected.behavior = document.getElementById("scriptText").value;
     }
 }
-
-// Prevent default right click behavior
-window.oncontextmenu = (event) => { event.preventDefault(); }
 
 // Initial methods on window load
 window.onload = function () {

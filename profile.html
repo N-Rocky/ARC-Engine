@@ -4,162 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile</title>
-    <style type="text/css">
-        * {
-            --backgroundColor: rgb(42, 75, 87);
-            --borderColor: rgb(255 148 70);
-            --highlightColor: rgb(0 250 255);
-        }
-
-        body {
-            background-color: var(--backgroundColor);
-            background-size: 100% 100%;
-            width: 100dvw;
-            height: 100dvh;
-            display: flex;
-            justify-content: center;
-            flex-direction: column;
-            padding: 0;
-            margin: 0;
-            box-sizing: border-box;
-            font-family: Courier New, Courier, monospace;
-            overflow: hidden;
-        }
-
-        #header {
-            color: white;
-            display: flex;
-            text-align: center;
-            font-size: 200%;
-            background-color: var(--backgroundColor);
-            height: 10dvh;
-            justify-content: center;
-            align-items: center;
-            border-top: 5px solid var(--borderColor);
-            border-bottom: 5px solid var(--borderColor);
-        }
-
-        #projects {
-            display: inline-grid;
-            grid-template-columns: 50% 50%;
-            grid-template-rows: auto;
-            border-radius: 20px;
-            flex-grow: 1;
-        }
-
-        .project {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            margin: 20px;
-            max-height: 32dvh;
-            color: black;
-            text-align: center;
-            background-color: var(--borderColor);
-            border-radius: 20px;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        #projectButton {
-            color: white;
-            display: flex;
-            text-align: center;
-            font-size: 200%;
-            background-color: var(--borderColor);
-            height: 10dvh;
-            justify-content: center;
-            align-items: center;
-            border: 5px solid var(--highlightColor);
-            border-top-left-radius: 30px;
-            border-top-right-radius: 30px;
-            margin-top: auto;
-            transition: 0.2s;
-            cursor: pointer;
-        }
-
-        #projectButton:hover {
-            color: black;
-            background-color: var(--highlightColor);
-        }
-
-        #template {
-            display: none;
-            flex-direction: row;
-            position: fixed;
-            width: 60dvw;
-            height: 60dvh;
-            align-self: center;
-            justify-content: center;
-            padding: 2%;
-            border: 2px solid var(--borderColor);
-            border-radius: 50px;
-            background-color: var(--backgroundColor);
-            box-shadow: rgba(0, 0, 0, 0.5) 10px 10px 10px;
-            transition: 0.2s;
-        }
-
-        #fields {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
-
-        #templateName {
-            height: 10%;
-            font-size: 200%;
-            padding: 1%;
-        }
-
-        #templateDescription {
-            flex-grow: 1;
-        }
-
-        #templateButton {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 500%;
-            background-color: var(--borderColor);
-            flex-grow: 1;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-
-    <div id="header"></div>
-    <div id="projects"></div>
-    <div id="projectButton">Create Project +</div>
-    <div id="template">
-        <div id="fields">
-            <input autocomplete="false" type="text" id="templateName" name="templateName">
-            <textarea id="templateDescription" name="templateDescription"></textarea>
+    <div id="profile">
+        <div id="header" class="welcome"></div>
+        <div id="projects"></div>
+        <div id="template" class="fade">
+            <div class="template">
+                <div id="fields">
+                    <input autocomplete="false" placeholder="Title" type="text" id="templateName" name="templateName">
+                    <textarea placeholder="Description..." id="templateDescription" name="templateDescription"></textarea>
+                </div>
+                <div id="templateButton">+</div>
+            </div>
         </div>
-        <div id="templateButton">+</div>
     </div>
 
     <script type="text/javascript">
+        let template; let templateName; let templateDescription; let templateTemplate;
         function init() {
             LoadProjects();
-            document.getElementById("projectButton").addEventListener("click", () => {
-                ProjectTemplate();
-            });
+
+            template = document.getElementById("template");
+            templateName = document.getElementById("templateName");
+            templateDescription = document.getElementById("templateDescription");
+            //templateTemplate = document.getElementById("templateTemplate");
+
+            template.onclick = (event) => {
+                if (event.target == template) {
+                    template.classList.toggle("fadeOut");
+                }
+            }
             document.getElementById("templateButton").addEventListener("click", () => {
                 CreateProject();
-                ProjectTemplate();
+                template.classList.toggle("fadeOut");
             });
-        }
-
-        function ProjectTemplate() {
-            let template = document.getElementById("template");
-            if (template.style.display == "flex") {
-                template.style.display = "none";
-            }
-            else {
-                template.style.display = "flex";
-            }
         }
 
         async function LoadProjects() {
@@ -185,23 +65,46 @@
         }
 
         function DisplayProjects(data) {
+            // Personal data
             document.getElementById("header").textContent = "Welcome, " + data.name;
+
+            // Clear out current projects
             const projects = document.getElementById("projects");
             while (projects.firstChild) {
                 projects.removeChild(projects.lastChild);
             }
+
+            // Append the create button
+            const projectButton = document.createElement("a");
+            projectButton.id = "projectButton";
+            projectButton.classList.add("project");
+            const projectImage = document.createElement("img");
+            projectImage.src = "Resources/PlusIcon.png";
+            projectButton.appendChild(projectImage);
+            projects.appendChild(projectButton);
+            projectButton.onclick = () => {
+                template.classList.toggle("fadeOut");
+            }
+
+            // Append the user's created projects
             for (let projectID in data.projects) {
-                let element = document.createElement("a");
+                const project = data.projects[projectID];
+
+                const element = document.createElement("a");
                 element.classList.add("project");
 
-                let name = document.createElement("p");
-                name.textContent = data.projects[projectID].name;
+                const name = document.createElement("p");
+                name.textContent = project.name;
                 name.style.fontSize = "200%";
                 element.appendChild(name);
 
-                let description = document.createElement("p");
-                description.textContent = data.projects[projectID].description;
+                const description = document.createElement("p");
+                description.textContent = project.description;
                 element.appendChild(description);
+
+                const cover = document.createElement("img");
+                cover.src = project.cover;
+                element.appendChild(cover);
 
                 element.href = "/project/" + projectID;
                 projects.appendChild(element);

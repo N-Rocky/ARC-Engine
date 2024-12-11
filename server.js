@@ -34,7 +34,7 @@ const expressSession = session({
 const app = express();
 app.use(express.static('public'));
 app.use(fileUpload());
-app.use(parser.json());
+app.use(parser.json({limit: '1mb'}));
 app.use(expressSession);
 app.use(passport.initialize());
 app.use(passport.session());
@@ -90,12 +90,12 @@ app.get("/", (req, res) => { // Home page
 });
 
 app.get("/profile", function (req, res) { // Profile page
-    if (!req.user) { res.redirect('/'); }
+    if (!req.user) { return res.redirect('/'); }
     res.sendFile("profile.html", { root: __dirname });
 });
 
 app.get("/profile/info", function (req, res) { // Grabbing profile info
-    if (!req.user) { res.redirect('/'); }
+    if (!req.user) { return res.redirect('/'); }
     const id = req.user.emails[0].value;
 
     let data = { name: req.user.displayName, projects: {} };
@@ -107,13 +107,15 @@ app.get("/profile/info", function (req, res) { // Grabbing profile info
 });
 
 app.post("/new", (req, res) => { // Creating a new project in the database
-    if (!req.user) { res.redirect('/'); }
+    if (!req.user) { return res.redirect('/'); }
     const id = req.user.emails[0].value;
 
     const projectID = uuidv4();
     fs.mkdirSync(`./Database/${id}/${projectID}`);
     clients[id][projectID] = { owner: id, path: `./Database/${id}/${projectID}` };
-    const configFile = { name: req.body.name, description: req.body.description };
+    const configFile = { name: req.body.name, description: req.body.description,
+        cover: "Resources/ProjectIcon.png"
+    };
 
     // Assets folder, config file, and scene file
     fs.mkdirSync(`./Database/${id}/${projectID}/Assets`);
@@ -134,20 +136,27 @@ app.post("/new", (req, res) => { // Creating a new project in the database
 });
 
 app.get("/project/:projectID", (req, res) => { // Opening the game engine
-    if (!req.user) { res.redirect('/'); }
+    if (!req.user) { return res.redirect('/'); }
     res.sendFile("public/engine.html", { root: __dirname });
 });
 
 app.post("/save", (req, res) => { // Save current project scene data to the database
-    if (!req.user) { res.redirect('/'); }
+    if (!req.user) { return res.redirect('/'); }
     const id = req.user.emails[0].value;
 
+    // Saving the scene (direct overwrite)
     fs.writeFileSync(`./Database/${id}/${req.body.projectID}/scene.json`, JSON.stringify(req.body.project));
+
+    // Saving the cover image (update config file)
+    const configData = JSON.parse(fs.readFileSync(`./Database/${id}/${req.body.projectID}/config.json`));
+    configData.cover = req.body.cover;
+    fs.writeFileSync(`./Database/${id}/${req.body.projectID}/config.json`, JSON.stringify(configData));
+
     res.end();
 });
 
 app.post("/load", (req, res) => { // Load the current project scene data from the database
-    if (!req.user) { res.redirect('/'); }
+    if (!req.user) { return res.redirect('/'); }
     const id = req.user.emails[0].value;
 
     const data = JSON.parse(fs.readFileSync(`./Database/${id}/${req.body.projectID}/scene.json`));
@@ -155,7 +164,7 @@ app.post("/load", (req, res) => { // Load the current project scene data from th
 });
 
 app.post("/files", (req, res) => { // Request list of files in the database
-    if (!req.user) { res.redirect('/'); }
+    if (!req.user) { return res.redirect('/'); }
     const id = req.user.emails[0].value;
 
     let files = {};
@@ -171,7 +180,7 @@ app.post("/files", (req, res) => { // Request list of files in the database
 });
 
 app.post("/project/:projectID/upload", (req, res) => { // Upload assets to the database
-    if (!req.user) { res.redirect('/'); }
+    if (!req.user) { return res.redirect('/'); }
     const id = req.user.emails[0].value;
 
     let asset = req.files.file;
@@ -194,7 +203,7 @@ app.post("/project/:projectID/upload", (req, res) => { // Upload assets to the d
 });
 
 app.get("/project/:projectID/file/:folder/:file", (req, res) => { // Request a file from the database
-    if (!req.user) { res.redirect('/'); }
+    if (!req.user) { return res.redirect('/'); }
     const id = req.user.emails[0].value;
 
     for (let file of fs.readdirSync(`./public/Assets/${req.params.folder}`)) { // Search in public

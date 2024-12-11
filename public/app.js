@@ -8,14 +8,12 @@ function CreateShaders(canvas, gl) {
     const matWorldUniform = gl.getUniformLocation(shaderProgram, 'matWorld');
     const matViewProjUniform = gl.getUniformLocation(shaderProgram, 'matViewProj');
 
-    // Lighting information
+    // Lighting and Material information
     gl.useProgram(shaderProgram);
     const colorUniformLocation = gl.getUniformLocation(shaderProgram, 'colorTint');
-    const pointLightDirUniformLocation = gl.getUniformLocation(shaderProgram, 'pointLightDirection');
-    const pointLightUniformLocation = gl.getUniformLocation(shaderProgram, 'pointLightIntensity');
+    const lightingUniformLocation = gl.getUniformLocation(shaderProgram, 'lighting');
     gl.uniform3f(colorUniformLocation, 1.0, 1.0, 1.0);
-    gl.uniform3f(pointLightDirUniformLocation, 0.0, 1.0, 0.0);
-    gl.uniform3f(pointLightUniformLocation, 1.0, 1.0, 1.0);
+    gl.uniform1i(lightingUniformLocation, 1);
 
     // Camera View + Projection
     const matView = glMatrix.mat4.create();
@@ -29,7 +27,7 @@ function CreateShaders(canvas, gl) {
         console.error("Failed to find attribute location"); return;
     }
 
-    const frame = function (camera, entities) {
+    const frame = function (camera, entities, selected) {
         
         // Reference the camera and target
         const pos = camera.position;
@@ -48,7 +46,7 @@ function CreateShaders(canvas, gl) {
             //glMatrix.vec3.fromValues(-rotZ.y * rotY.x, rotX.x * rotZ.x, -rotX.y * rotY.x * rotZ.y));
 
         // Arg 1 = field of view, Arg 2 = aspect ratio, Arg 3 = near clipping, Arg 4 = far clipping
-        glMatrix.mat4.perspective(matProj, glMatrix.glMatrix.toRadian(camera.fieldOfView), canvas.width / canvas.height, 0.1, 100);
+        glMatrix.mat4.perspective(matProj, glMatrix.glMatrix.toRadian(camera.fieldOfView), canvas.width / canvas.height, 0.001, 100);
 
         const matViewProj = glMatrix.mat4.create();
         // Essentially: matViewProj = matProj * matView
@@ -69,8 +67,9 @@ function CreateShaders(canvas, gl) {
         gl.uniformMatrix4fv(matViewProjUniform, false, matViewProj);
 
         for (let entity of entities) {
-            if (entity.renderer) { entity.renderer.Render(gl, shaderProgram, matWorldUniform); }
+            if (entity.renderer) { entity.renderer.Render(gl, shaderProgram); }
         }
+        if (selected != null) { selected.renderer.Render(gl, shaderProgram, true); }
     }
     return frame;
 }
@@ -143,8 +142,7 @@ const fragmentShaderSourceCode = `#version 300 es
     in vec3 fragmentNormal;
 
     uniform vec3 colorTint;
-    uniform vec3 pointLightIntensity;
-    uniform vec3 pointLightPosition;
+    uniform int lighting;
 
     uniform sampler2D sampler;
     out vec4 outputColor;
@@ -153,7 +151,7 @@ const fragmentShaderSourceCode = `#version 300 es
         //vec3 ambientLightIntensity = vec3(1.0, 1.0, 1.0); // 2D testing only!
         vec3 ambientLightIntensity = vec3(0.1, 0.1, 0.1);
         vec3 sunlightIntensity = vec3(1.0, 1.0, 1.0);
-        vec3 sunlightDirection = vec3(0.0, 1.0, -1.0);
+        vec3 sunlightDirection = vec3(0.5, 1.0, -0.8);
 
         vec3 surfaceNormal = normalize(fragmentNormal);
         vec3 sunlightDirNormal = normalize(sunlightDirection);
@@ -161,9 +159,16 @@ const fragmentShaderSourceCode = `#version 300 es
 
         vec3 lightIntensity = ambientLightIntensity + sunlightIntensity * max(dot(surfaceNormal, sunlightDirNormal), 0.0);
 
-        outputColor = vec4(texel.rgb * colorTint * lightIntensity, texel.a);
-        //outputColor = vec4(surfaceNormal, 1.0); // View the object's normals
-        //outputColor = texel; // View the object's texture
+        switch(lighting) {
+            case 0: // No lighting
+                outputColor = vec4(texel.rgb * colorTint, texel.a); break;
+            case 1: // Phong lighting
+                outputColor = vec4(texel.rgb * colorTint * lightIntensity, texel.a); break;
+            case 2: // Highlighting
+                outputColor = vec4(1.0, 0.6, 0.0, 1.0); break;
+            case 3: // Surface normals
+                outputColor = vec4(surfaceNormal, 1.0); break;
+        }
     }`;
 
 class Renderer {
@@ -177,7 +182,7 @@ class Renderer {
         this.numIndices = numIndices;
     }
 
-    Render(gl, program) {
+    Render(gl, program, outline = false) {
         const position = glMatrix.vec3.fromValues(this.entity.position.x, this.entity.position.y, this.entity.position.z);
         const angle = this.entity.rotation.multiply(Math.PI / 180);
 
@@ -188,12 +193,20 @@ class Renderer {
         glMatrix.quat.mul(this.#rotation, rotY, rotX); glMatrix.quat.mul(this.#rotation, this.#rotation, rotZ);
         // Order: rotY, rotX, rotZ -> Y is global, X is local to Y, Z is local to X
 
-        glMatrix.vec3.set(this.#scaleVec, this.entity.scale.x, this.entity.scale.y, this.entity.scale.z);
+        let scale = this.entity.scale; const thickness = 0.05;
+        if (outline) { scale = scale.abs.add(new Vector3(thickness, thickness, thickness)); scale.x *= -1; }
+        glMatrix.vec3.set(this.#scaleVec, scale.x, scale.y, scale.z);
         glMatrix.mat4.fromRotationTranslationScale(this.#matWorld, this.#rotation, position, this.#scaleVec);
 
-        const colorTint = this.entity.color;
+        let colorTint = this.entity.color;
+        if (outline) { colorTint = {r: 1000, g: 1000, b: 1000}; }
         const colorUniformLocation = gl.getUniformLocation(program, 'colorTint');
         gl.uniform3f(colorUniformLocation, colorTint.r / 255, colorTint.g / 255, colorTint.b / 255);
+
+        let lighting = 1;
+        if (outline) { lighting = 2; }
+        const lightingUniformLocation = gl.getUniformLocation(program, 'lighting');
+        gl.uniform1i(lightingUniformLocation, lighting);
 
         gl.uniformMatrix4fv(gl.getUniformLocation(program, 'matWorld'), false, this.#matWorld);
         gl.bindVertexArray(this.vao);

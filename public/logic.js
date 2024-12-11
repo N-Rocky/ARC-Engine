@@ -1,6 +1,6 @@
 class Logic {
     #sceneEntities = []; #gameEntities = [];
-    #selectedEntity = -1;
+    #selected = null;
 
     // Game State
     #timestep = 16; #lastUpdate = 0;
@@ -158,17 +158,24 @@ class Logic {
         let projectID = window.location.href.split("/");
         projectID = projectID[projectID.length - 1];
     
-        let data = {};
-        let entityData = [];
+        // Data to be saved
+        const data = {};
+        
+        // Saving the entities in the scene
+        const entityData = [];
         for (let entity of this.#sceneEntities) {
             entityData.push(entity.toJSON());
         }
         data["entities"] = entityData;
 
+        // Saving the cover image
+        const screenshot = canvas.toDataURL('png');
+
         await fetch("/save", {
             method: "POST", headers: { "Content-type": "application/json" },
             body: JSON.stringify({
                 project: data,
+                cover: screenshot,
                 projectID: projectID
             })
         });
@@ -178,6 +185,7 @@ class Logic {
         let projectID = window.location.href.split("/");
         projectID = projectID[projectID.length - 1];
     
+        // Data to be loaded
         let data;
     
         await fetch("/load", {
@@ -197,6 +205,7 @@ class Logic {
         let projectID = window.location.href.split("/");
         projectID = projectID[projectID.length - 1];
 
+        // Assets to be loaded
         let data;
 
         await fetch("/files", {
@@ -206,15 +215,24 @@ class Logic {
             })
         }).then((res) => res.json()).then((res) => data = res.files);
 
-        const displayFiles = document.getElementById("files");
-        while (displayFiles.firstChild) {
-            displayFiles.removeChild(displayFiles.lastChild);
+        const taskbar = document.getElementById("taskbar");
+        while (taskbar.firstChild) {
+            taskbar.removeChild(taskbar.lastChild);
         }
 
+        let currentFolder = null;
         for (let folder of Object.keys(data)) { // Load each asset collection
             let displayFolder = document.createElement("a"); displayFolder.classList.add("folder");
             displayFolder.textContent = folder;
             displayFolder.addEventListener("click", () => {
+                const displayFiles = document.getElementById("files");
+                if (currentFolder == folder) {
+                    displayFiles.classList.remove("openFiles");
+                    currentFolder = null;
+                    return;
+                }
+                currentFolder = folder;
+                displayFiles.classList.add("openFiles");
                 while (displayFiles.firstChild) {
                     displayFiles.removeChild(displayFiles.lastChild);
                 }
@@ -226,43 +244,41 @@ class Logic {
                     if (folder == "Images") { // Image file
                         displayFile.style.backgroundImage = `url('${projectID}/${fileURL}')`;
                         displayFile.addEventListener("click", () => {
-                            if (this.#selectedEntity != -1) {
-                                let entity = this.#sceneEntities[this.#selectedEntity];
-                                entity.texture = fileURL;
-                                CreateRenderer(entity);
+                            if (this.#selected != null) {
+                                this.#selected.texture = fileURL;
+                                CreateRenderer(this.#selected);
                             }
                         });
                     }
                     else if (folder == "Audio") { // Audio file type
-                        displayFile.style.backgroundImage = `url('/Resources/DefaultAudio.png')`;
+                        displayFile.style.backgroundImage = `url('/Resources/AudioIcon.png')`;
                         // Implement Audio Behavior
                     }
                     else if (folder == "Models") {
-                        displayFile.style.backgroundImage = `url('/Resources/DefaultFile.png')`;
+                        displayFile.style.backgroundImage = `url('/Resources/FIleIcon.png')`;
                         displayFile.addEventListener("click", () => {
-                            if (this.#selectedEntity != -1) {
-                                let entity = this.#sceneEntities[this.#selectedEntity];
-                                entity.model = fileURL;
-                                CreateRenderer(entity);
+                            if (this.#selected != null) {
+                                this.#selected.model = fileURL;
+                                CreateRenderer(this.#selected);
                             }
                         });
                     }
                     else { // Misc. file type
-                        displayFile.style.backgroundImage = `url('/Resources/DefaultFile.png')`;
+                        displayFile.style.backgroundImage = `url('/Resources/FileIcon.png')`;
                         // Implement Default Behavior
                     }
                     
                     displayFiles.appendChild(displayFile);
                 }
             });
-            displayFiles.appendChild(displayFolder);
+            taskbar.appendChild(displayFolder);
         }
     }
 
     set currentKey(value) { this.#currentKey = value; }
     get entities() { return this.#running ? this.#gameEntities : this.#sceneEntities; }
-    get selectedEntity() { return this.#selectedEntity; }
-    set selectedEntity(value) { this.#selectedEntity = value; }
+    get selected() { return this.#selected; }
+    set selected(value) { this.#selected = value; }
     get running() { return this.#running; }
     get mouseX() { return this.#mouseX; }
     get mouseY() { return this.#mouseY; }
@@ -318,6 +334,7 @@ class Vector3 { // 3D Vectors
     }
     get magnitude() { return Math.sqrt(this.x ** 2 + this.y ** 2 + this.z ** 2); }
     get normalized() { return new Vector3(this.z, -this.y, this.x).unit; }
+    get abs() { return new Vector3(Math.abs(this.x), Math.abs(this.y), Math.abs(this.z)); }
     get unit() {
         if (this.magnitude == 0) { return new Vector3(); }
         return new Vector3(this.x / this.magnitude, this.y / this.magnitude, this.z / this.magnitude);
@@ -383,11 +400,11 @@ class Entity { // Basis of every game object
         this.name = name;
 
         // Default values
-        this.kinematic = false; this.static = false; this.gravity = true;
+        this.kinematic = false; this.static = false; this.gravity = false;
         this.mass = 2; this.elasticity = 0.6;
         this.velocity = new Vector3(); this.acceleration = new Vector3();
         this.tag = "Default";
-        this.color = {r: 255, g: 255, b: 255};
+        this.color = {r: 200, g: 200, b: 200};
         if (logic.transpiler) { this.behavior = "def Start():\n\n\ndef Update():\n\n\ndef KeyPress(key):\n\n\ndef Collide(other):\n\n"; }
         else { this.behavior = "function Start() {\n\n}\n\nfunction Update() {\n\n}\n\nfunction KeyPress(key) {\n\n}\n\nfunction Collide(other) {\n\n}"; }
 
@@ -460,7 +477,8 @@ class Entity { // Basis of every game object
                 for (let attribute of ["position", "rotation", "scale"]) {
                     for (let axis of ["x", "y", "z"]) {
                         const input = document.createElement("INPUT"); input.classList.add("componentItem");
-                        input.type = "number"; input.name = attribute + axis; input.value = this[attribute][axis];
+                        input.type = "number"; input.step = 0.1;
+                        input.name = attribute + axis; input.value = this[attribute][axis];
                         const label = document.createElement("Label"); label.classList.add("componentItem");
                         label.htmlFor = attribute + axis; label.textContent = `${axis} ${attribute}:`;
                         input.oninput = () => { this[attribute][axis] = parseFloat(input.value); }

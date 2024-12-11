@@ -9,24 +9,31 @@
 </head>
 <body>
     <!-- Toolbar -->
-    <div id="toolbar"></div>
+    <div id="toolbar">
+        <div class="tool" id="plusIcon"><img src="/Resources/PlusIcon.png" title="Create a new entity"></div>
+        <div class="tool" id="duplicateIcon"><img src="/Resources/DuplicateIcon.png" title="Duplicate selected entity"></div>
+        <div style="flex-grow: 1;"></div>
+        <label class="tool" for="fileSelect"><img src="/Resources/UploadIcon.png" title="Upload a file"></label>
+        <input type="file" id="fileSelect" name="fileSelect" accept=".png,.jpg,.jpeg,.mp3,.wav,.obj">
+        <div class="tool" id="saveIcon"><img src="/Resources/SaveIcon.png" title="Save the project"></div>
+        <div class="tool" id="discardIcon"><img src="/Resources/DiscardIcon.png" title="Revert to last save"></div>
+    </div>
     
     <!-- Project Window -->
     <div id="project">
         <!-- Scene/Game Window -->
         <canvas id="canvas" class="scene"></canvas>
         
+        <!-- Asset Files -->
+        <div id="files" class="files"></div>
+
         <!-- Taskbar -->
-        <div id="taskbar">
-            <label id="fileSelector" for="fileSelect">+</label>
-            <input type="file" id="fileSelect" name="fileSelect" accept=".png,.jpg,.jpeg,.mp3,.wav,.obj">
-            <div id="files"></div>
-        </div>
+        <div id="taskbar"></div>
     </div>
 
     <!-- Inspector Window -->
     <div id="inspector">
-        <div class="componentHeader" id="inspectorHeader" style="color: white; border-color: var(--secondary);">Inspector</div>
+        <div id="inspectorHeader">Inspector</div>
     </div>
 
     <!-- Terminal Window -->

@@ -33,7 +33,7 @@ Noah Butler
 | :----: | :-----: | :---------: |
 | Started | 9/17/2024 | Redesign the frontend for the profile and home pages
 | Not Started | N/A | Display screenshots for each game on the profile page
-| Not Started | N/A | Another pass on the design of the engine page
+| Completed | 12/5/2024 | Another pass on the design of the engine page
 | Not Started | N/A | Create the hub page where all projects are viewed
 | Not Started | N/A | Add a tag system to make games more easily searchable
 | Not Started | N/A | Design interactive tutorials that are visible on the home page
