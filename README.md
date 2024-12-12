@@ -32,7 +32,7 @@ Noah Butler
 | Status | Date | Description |
 | :----: | :-----: | :---------: |
 | Started | 9/17/2024 | Redesign the frontend for the profile and home pages
-| Not Started | N/A | Display screenshots for each game on the profile page
+| Completed | 12/11/2024 | Display screenshots for each game on the profile page
 | Completed | 12/5/2024 | Another pass on the design of the engine page
 | Not Started | N/A | Create the hub page where all projects are viewed
 | Not Started | N/A | Add a tag system to make games more easily searchable
@@ -52,7 +52,7 @@ Noah Butler
 | :----: | :-----: | :---------: |
 | Completed | 11/1/2024 | Swap from Pixi.js to WebGL for 2D rendering
 | Completed | 9/27/2024 | Add support for mp3 files for sound effects within games
-| Started | 11/4/2024 | 3D support in the editor and the logic
+| Completed | 12/3/2024 | 3D support in the editor and the logic
 | Completed | 11/1/2024 | Begin working on 3D rendering with WebGL
 | Not Started | N/A | Setup networked cooperative development
 | Not Started | N/A | Add WebXR support for VR games
