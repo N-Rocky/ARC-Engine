@@ -1,5 +1,12 @@
 // WebGL Application
 let posAttrib; let texCoordAttrib; let normalAttrib;
+
+/**
+ * Creates the shader program to be used when rendering the scene
+ * @param {HTMLCanvasElement} canvas - Canvas to be drawn on
+ * @param {*} gl - WebGL used to generate the program and do the rendering
+ * @returns Function that renders the entities given to it based on the camera's position and rotation
+ */
 function CreateShaders(canvas, gl) {
     // Create the shader program to link the vertex and fragment shaders together
     const shaderProgram = CreateProgram(gl, vertexShaderSourceCode, fragmentShaderSourceCode);
@@ -74,7 +81,10 @@ function CreateShaders(canvas, gl) {
     return frame;
 }
 
-// Loads all relevant assets and creates a renderer for an entity to use
+/**
+ * Loads all relevant assets and creates a renderer for an entity to use
+ * @param {Entity} entity - Entity to create a VAO and renderer for
+ */
 function CreateRenderer(entity) {
     LoadJSONResource(window.location.href + "/" + entity.model, function (modelError, model) {
         if (modelError) { console.error(modelError); }
@@ -175,6 +185,15 @@ class Renderer {
     #matWorld = glMatrix.mat4.create();
     #scaleVec = glMatrix.vec3.create();
     #rotation = glMatrix.quat.create();
+
+    /**
+     * Creates a renderer for an entity
+     * @constructor
+     * @param {Entity} entity - The entity containing the renderer
+     * @param {WebGLTexture} texture - The texture to be rendered
+     * @param {*} vao - The vertex array object based on the entity's model and texture
+     * @param {*} numIndices - The number of indices in the entity's model
+     */
     constructor(entity, texture, vao, numIndices) {
         this.entity = entity;
         this.texture = texture;
@@ -182,6 +201,12 @@ class Renderer {
         this.numIndices = numIndices;
     }
 
+    /**
+     * Renders the entity on the canvas
+     * @param {WebGL2RenderingContext} gl - Used to render the object
+     * @param {WebGLProgram} program - Program containing vertex and fragmet shaders
+     * @param {boolean} outline - Renders an outline if true, normal entity if not
+     */
     Render(gl, program, outline = false) {
         const position = glMatrix.vec3.fromValues(this.entity.position.x, this.entity.position.y, this.entity.position.z);
         const angle = this.entity.rotation.multiply(Math.PI / 180);

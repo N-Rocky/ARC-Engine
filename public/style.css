@@ -407,8 +407,8 @@ input[type="file"] {
 }
 
 /* Behavior terminal */
-#terminal {
-    display: none;
+.terminal {
+    display: flex;
     flex-direction: row;
     position: fixed;
     width: 80dvw;
@@ -419,7 +419,11 @@ input[type="file"] {
     border-radius: 50px;
     background-color: var(--terminalColor);
     box-shadow: rgba(0, 0, 0, 0.5) 10px 10px 10px;
+    visibility: hidden;
     transition: 0.2s;
+}
+.terminalDisplay {
+    visibility: visible;
 }
 #scriptText {
     width: 70%;

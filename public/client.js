@@ -1,6 +1,9 @@
 // Scene/Game Window, WebGL Context, Logic, and Frame Render method
 let canvas; let gl; let logic; let frame;
 
+/**
+ * Initializes the canvas, graphics library to begin rendering, logic, and project files
+ */
 async function init() { // Initialize graphics and logic
 
     // Canvas and GL
@@ -23,6 +26,9 @@ async function init() { // Initialize graphics and logic
     ListEntities();
 }
 
+/**
+ * Enters and exits playtest mode to demo the current state of the game
+ */
 function Playmode() { // Enter playtest mode
     canvas.classList.toggle('game');
     canvas.width = canvas.clientWidth;
@@ -32,6 +38,10 @@ function Playmode() { // Enter playtest mode
     logic.selected = null; ListEntities();
 }
 
+/**
+ * Updates the logic and renders the screen based on the camera's position and rotation
+ * @param {integer} timestamp - Milliseconds since last frame
+ */
 function RenderScreen(timestamp) { // Render loop
     logic.Update(timestamp);
     frame(logic.camera, logic.entities, logic.selected);
@@ -54,6 +64,9 @@ document.getElementById("fileSelect").onchange = async function(event) {
     logic.LoadAssets();
 }
 
+/**
+ * Displays a list view in the inspector of all the entities in the scene
+ */
 function ListEntities() { // List the entity hierarchy
     const inspector = document.getElementById("inspector");
     while (inspector.lastElementChild.id != "inspectorHeader") {
@@ -66,7 +79,7 @@ function ListEntities() { // List the entity hierarchy
         item.textContent = entity.name;
         item.onclick = () => {
             logic.selected = entity;
-            entity.Inspect();
+            entity.Inspect(document.getElementById("terminal"));
         }
         inspector.appendChild(item);
     }
@@ -131,36 +144,16 @@ window.addEventListener("keydown", function (event) { // Key down
         }
     }
 
-    if (event.code == "Tab") { // Terminal window
+    if (event.ctrlKey && event.code == "Delete") {
         event.preventDefault();
-        if (document.getElementById("terminal").style.display == "flex") {
-            document.getElementById("terminal").style.display = "none";
-            document.getElementById("scriptText").value = "";
-        }
-        else {
-            document.getElementById("terminal").style.display = "flex";
-            if (logic.selected != null) {
-                document.getElementById("scriptText").value = logic.selected.behavior;
-            }
+        if (logic.selected != null) {
+            logic.selected.Delete();
+            ListEntities();
         }
     }
-    if (document.getElementById("terminal").style.display == "flex") { return; } // Ignore input when scripting
 
     // Pass to logic and all objects that access keyboard input
     logic.currentKey = event.key;
-
-    switch (event.code) {
-        case "Delete":
-            if (logic.selected != null) {
-                logic.selected.Delete();
-                ListEntities();
-            }
-            break;
-        case "KeyT":
-            console.log("Entities:"); console.log(logic.entities); break;
-        default:
-            break;
-    }
 
     if (event.code == "KeyW" && !inputs.wKey) { inputs.wKey = true; ShiftViewport(); }
     if (event.code == "KeyA" && !inputs.aKey) { inputs.aKey = true; ShiftViewport(); }
@@ -169,6 +162,10 @@ window.addEventListener("keydown", function (event) { // Key down
     if (event.code == "KeyQ" && !inputs.qKey) { inputs.qKey = true; ShiftViewport(); }
     if (event.code == "KeyE" && !inputs.eKey) { inputs.eKey = true; ShiftViewport(); }
 });
+
+/**
+ * Shifts the viewport camera, allowing users to traverse the scene in 3D space
+ */
 function ShiftViewport() {
     if (!shifting && rightClick) {
         shifting = true;
@@ -252,7 +249,7 @@ window.onmouseup = (event) => { // Mouse up
 // Mouse movement
 window.onmousemove = (event) => {
     if (logic) { logic.UpdateMouse(event.clientX, event.clientY); }
-    if (!logic.running) {
+    if (logic && !logic.running) {
         if (leftClick) {
             logic.camera.position = logic.camera.position.add(logic.camera.rotation.up.multiply(event.movementY / 100));
             logic.camera.position = logic.camera.position.add(logic.camera.rotation.right.multiply(-event.movementX / 100));

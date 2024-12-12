@@ -14,7 +14,7 @@
         <div class="tool" id="duplicateIcon"><img src="/Resources/DuplicateIcon.png" title="Duplicate selected entity"></div>
         <div style="flex-grow: 1;"></div>
         <label class="tool" for="fileSelect"><img src="/Resources/UploadIcon.png" title="Upload a file"></label>
-        <input type="file" id="fileSelect" name="fileSelect" accept=".png,.jpg,.jpeg,.mp3,.wav,.obj">
+        <input type="file" id="fileSelect" name="fileSelect" accept=".png,.jpg,.jpeg,.mp3,.wav,.json">
         <div class="tool" id="saveIcon"><img src="/Resources/SaveIcon.png" title="Save the project"></div>
         <div class="tool" id="discardIcon"><img src="/Resources/DiscardIcon.png" title="Revert to last save"></div>
     </div>
@@ -37,7 +37,7 @@
     </div>
 
     <!-- Terminal Window -->
-    <div id="terminal">
+    <div id="terminal" class="terminal">
         <textarea spellcheck="false" id="scriptText"></textarea>
         <div id="references">
             Local Attributes (entity)
