@@ -4,8 +4,8 @@
     --secondary: rgb(255 148 70);
     --highlight: rgb(0, 255, 240);
     --fontColor: rgb(0, 0, 0);
-    --windowColor: rgb(42, 75, 87);
-    --terminalColor: rgb(25, 45, 50);
+    --terminalColor: rgb(20, 35, 40);
+
     padding: 0;
     margin: 0;
     box-sizing: border-box;
@@ -121,7 +121,7 @@ body {
     justify-content: center;
     align-items: center;
     margin: 1%;
-    width: 48%; height: 35dvh;
+    width: 31%; height: 35dvh;
     text-align: center;
     box-shadow: rgba(0, 0, 0, 0.5) 0px 4px 10px;
     border: 5px solid var(--secondary);
@@ -256,7 +256,7 @@ body {
     flex-direction: row;
     width: 100%;
     justify-content: left;
-    background-color: var(--windowColor);
+    background-color: var(--primary);
     height: 10dvh;
 }
 .files {
@@ -335,7 +335,7 @@ input[type="file"] {
     right: 0;
     width: clamp(300px, 25dvw, 500px);
     height: 100%;
-    background-color: var(--windowColor);
+    background-color: var(--primary);
     border-left: 2px solid var(--highlight);
 }
 #inspectorHeader {
@@ -410,36 +410,29 @@ input[type="file"] {
 .terminal {
     display: flex;
     flex-direction: row;
-    position: fixed;
-    width: 80dvw;
-    height: 80dvh;
-    align-self: center;
-    padding: 2%;
-    border: 2px solid var(--secondary);
-    border-radius: 50px;
-    background-color: var(--terminalColor);
+    position: absolute;
+    width: 0;
+    height: 100dvh;
+    justify-self: left;
     box-shadow: rgba(0, 0, 0, 0.5) 10px 10px 10px;
-    visibility: hidden;
-    transition: 0.2s;
+    visibility: visible;
+    transition: 0.3s ease-in-out;
 }
 .terminalDisplay {
-    visibility: visible;
+    width: 100%;
 }
 #scriptText {
     width: 70%;
     padding: 2%;
     color: white;
     font-size: 100%;
-    border: 2px solid var(--secondary);
-    border-radius: 30px;
-    background-color: black;
+    background-color: var(--terminalColor);
     resize: none;
 }
 #references {
     width: 30%;
     padding: 2%;
     border: 2px solid var(--secondary);
-    border-radius: 30px;
     color: white;
     background-color: black;
 }

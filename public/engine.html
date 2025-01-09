@@ -29,43 +29,43 @@
 
         <!-- Taskbar -->
         <div id="taskbar"></div>
+
+        <!-- Terminal -->
+        <div id="terminal" class="terminal">
+            <textarea spellcheck="false" id="scriptText"></textarea>
+            <div id="references">
+                Local Attributes (entity)
+                <ul>
+                    <li></li>
+                    <li style="color: white;">* name (String, Direct identifier)</li>
+                    <li style="color: white;">* tag (String, Widespread identifier)</li>
+                    <li style="color: white;">* position (Vector, X and Y coordinates)</li>
+                    <li style="color: white;">* velocity (Vector, X and Y velocities)</li>
+                    <li style="color: white;">* acceleration (Vector, X and Y accelerations)</li>
+                    <li style="color: white;">* collider (Collider, Type and scale)</li>
+                    <li></li>
+                </ul>
+                Global Access Variables
+                <ul>
+                    <li></li>
+                    <li style="color: white;">* mouseX (Float, X coordinate)</li>
+                    <li style="color: white;">* mouseY (Float, Y coordinate)</li>
+                    <li></li>
+                </ul>
+                Global Access Methods
+                <ul>
+                    <li></li>
+                    <li style="color: white;">* Random (// Arguments or return values?)</li>
+                    <li style="color: white;">* AudioSource (// Later)</li>
+                    <li></li>
+                </ul>
+            </div>
+        </div>
     </div>
 
     <!-- Inspector Window -->
     <div id="inspector">
         <div id="inspectorHeader">Inspector</div>
-    </div>
-
-    <!-- Terminal Window -->
-    <div id="terminal" class="terminal">
-        <textarea spellcheck="false" id="scriptText"></textarea>
-        <div id="references">
-            Local Attributes (entity)
-            <ul>
-                <li></li>
-                <li style="color: white;">* name (String, Direct identifier)</li>
-                <li style="color: white;">* tag (String, Widespread identifier)</li>
-                <li style="color: white;">* position (Vector, X and Y coordinates)</li>
-                <li style="color: white;">* velocity (Vector, X and Y velocities)</li>
-                <li style="color: white;">* acceleration (Vector, X and Y accelerations)</li>
-                <li style="color: white;">* collider (Collider, Type and scale)</li>
-                <li></li>
-            </ul>
-            Global Access Variables
-            <ul>
-                <li></li>
-                <li style="color: white;">* mouseX (Float, X coordinate)</li>
-                <li style="color: white;">* mouseY (Float, Y coordinate)</li>
-                <li></li>
-            </ul>
-            Global Access Methods
-            <ul>
-                <li></li>
-                <li style="color: white;">* Random (// Arguments or return values?)</li>
-                <li style="color: white;">* AudioSource (// Later)</li>
-                <li></li>
-            </ul>
-        </div>
     </div>
 
     <!-- Logic Script File -->
