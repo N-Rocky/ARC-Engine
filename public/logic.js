@@ -540,8 +540,8 @@ class Entity { // Basis of every game object
         this.velocity = new Vector3(); this.acceleration = new Vector3();
         this.tag = "Default";
         this.color = {r: 200, g: 200, b: 200};
-        if (logic.transpiler) { this.behavior = "def Start():\n\n\ndef Update():\n\n\ndef KeyPress(key):\n\n\ndef Collide(other):\n\n"; }
-        else { this.behavior = "function Start() {\n\n}\n\nfunction Update() {\n\n}\n\nfunction KeyPress(key) {\n\n}\n\nfunction Collide(other) {\n\n}"; }
+        if (logic.transpiler) { this.behavior = "def Start():\n\t\n\ndef Update():\n\t\n\ndef KeyPress(key):\n\t\n\ndef Collide(other):\n\t\n"; }
+        else { this.behavior = "function Start() {\n\t\n}\n\nfunction Update() {\n\t\n}\n\nfunction KeyPress(key) {\n\t\n}\n\nfunction Collide(other) {\n\t\n}"; }
 
         // Initialize the entity's WebGL renderer
         CreateRenderer(this);
@@ -597,7 +597,7 @@ class Entity { // Basis of every game object
     }
 
     /**
-     * Loads the entities attributes intot he inspector for manipulation
+     * Loads the entities attributes into the inspector for manipulation
      * @param {HTMLDivElement} terminal - The terminal used for editing the entity's behavior attribute
      */
     Inspect(terminal) {

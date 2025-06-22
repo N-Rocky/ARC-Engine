@@ -8,7 +8,7 @@ async function init() { // Initialize graphics and logic
 
     // Canvas and GL
     canvas = document.getElementById("canvas");
-    gl = canvas.getContext('webgl2');
+    gl = canvas.getContext('webgl2', {antialias: true, powerPreference: "high-performance"});
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
     canvas.oncontextmenu = (event) => { event.preventDefault(); }
@@ -270,8 +270,14 @@ document.getElementById("canvas").addEventListener("wheel", event => {
 });
 
 // Updating behavior
-document.getElementById("scriptText").oninput = function () {
+document.getElementById("scriptText").onkeydown = function (event) {
     if (logic.selected != null) {
+        if (event.code == "Tab") {
+            event.preventDefault();
+            const cursorPosition = this.selectionStart;
+            this.value = this.value.substring(0, this.selectionStart) + "\t" + this.value.substring(this.selectionEnd);
+            this.selectionStart = this.selectionEnd = cursorPosition + 1;
+        }
         logic.selected.behavior = document.getElementById("scriptText").value;
     }
 }

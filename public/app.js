@@ -15,11 +15,13 @@ function CreateShaders(canvas, gl) {
     const matWorldUniform = gl.getUniformLocation(shaderProgram, 'matWorld');
     const matViewProjUniform = gl.getUniformLocation(shaderProgram, 'matViewProj');
 
-    // Lighting and Material information
+    // Fragment shader uniforms (Lighting and Material information)
     gl.useProgram(shaderProgram);
-    const colorUniformLocation = gl.getUniformLocation(shaderProgram, 'colorTint');
-    const lightingUniformLocation = gl.getUniformLocation(shaderProgram, 'lighting');
+    const resolutionUniformLocation = gl.getUniformLocation(shaderProgram, 'u_resolution');
+    gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
+    const colorUniformLocation = gl.getUniformLocation(shaderProgram, 'u_colorTint');
     gl.uniform3f(colorUniformLocation, 1.0, 1.0, 1.0);
+    const lightingUniformLocation = gl.getUniformLocation(shaderProgram, 'u_lighting');
     gl.uniform1i(lightingUniformLocation, 1);
 
     // Camera View + Projection
@@ -143,6 +145,7 @@ const vertexShaderSourceCode = `#version 300 es
         //fragmentNormal = vertexNormal; // Normals local to model
 
         gl_Position = matViewProj * matWorld * vec4(vertexPosition, 1.0);
+        //gl_Position = matViewProj * matWorld * vec4(vertexPosition + vertexNormal/1.0, 1.0);
     }`;
 
 const fragmentShaderSourceCode = `#version 300 es
@@ -151,8 +154,9 @@ const fragmentShaderSourceCode = `#version 300 es
     in vec2 fragmentTexCoord;
     in vec3 fragmentNormal;
 
-    uniform vec3 colorTint;
-    uniform int lighting;
+    uniform vec2 u_resolution;
+    uniform vec3 u_colorTint;
+    uniform int u_lighting;
 
     uniform sampler2D sampler;
     out vec4 outputColor;
@@ -163,17 +167,44 @@ const fragmentShaderSourceCode = `#version 300 es
         vec3 sunlightIntensity = vec3(1.0, 1.0, 1.0);
         vec3 sunlightDirection = vec3(0.5, 1.0, -0.8);
 
+        vec2 st = gl_FragCoord.xy / u_resolution.xy;
         vec3 surfaceNormal = normalize(fragmentNormal);
         vec3 sunlightDirNormal = normalize(sunlightDirection);
         vec4 texel = texture(sampler, fragmentTexCoord);
 
         vec3 lightIntensity = ambientLightIntensity + sunlightIntensity * max(dot(surfaceNormal, sunlightDirNormal), 0.0);
 
-        switch(lighting) {
+        switch(u_lighting) {
             case 0: // No lighting
-                outputColor = vec4(texel.rgb * colorTint, texel.a); break;
+                outputColor = vec4(texel.rgb * u_colorTint, texel.a); break;
             case 1: // Phong lighting
-                outputColor = vec4(texel.rgb * colorTint * lightIntensity, texel.a); break;
+
+                //outputColor = vec4(texel.rg * fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453), 0.0, 1.0);
+
+                // Grid
+                //vec3 color = vec3(0.0);
+                //st *= 10.0;
+                //st = fract(st);
+                //color = vec3(st, 0.0);
+                //outputColor = vec4(color, 1.0);
+
+                // Rings
+                //st.x *= u_resolution.x/u_resolution.y;
+                //vec3 color = vec3(0.0);
+                //float d = 0.0;
+                //st = st *2.-1.;
+                //d = length( abs(st)-.3 );
+                //outputColor = vec4(vec3(fract(d*10.0)),1.0); break;
+
+                // Circle mask
+                //float pct = 0.0;
+                //pct = step(0.2, distance(st, vec2(0.5)));
+                //outputColor = vec4(vec3(pct) * texel.rgb, 1.0); break;
+                
+                //outputColor = vec4(vec3(st, 0.0) * texel.rgb, 1.0); break;
+                outputColor = vec4(texel.rgb * u_colorTint * lightIntensity, texel.a); break;
+
+                break;
             case 2: // Highlighting
                 outputColor = vec4(1.0, 0.6, 0.0, 1.0); break;
             case 3: // Surface normals
@@ -225,12 +256,12 @@ class Renderer {
 
         let colorTint = this.entity.color;
         if (outline) { colorTint = {r: 1000, g: 1000, b: 1000}; }
-        const colorUniformLocation = gl.getUniformLocation(program, 'colorTint');
+        const colorUniformLocation = gl.getUniformLocation(program, 'u_colorTint');
         gl.uniform3f(colorUniformLocation, colorTint.r / 255, colorTint.g / 255, colorTint.b / 255);
 
         let lighting = 1;
         if (outline) { lighting = 2; }
-        const lightingUniformLocation = gl.getUniformLocation(program, 'lighting');
+        const lightingUniformLocation = gl.getUniformLocation(program, 'u_lighting');
         gl.uniform1i(lightingUniformLocation, lighting);
 
         gl.uniformMatrix4fv(gl.getUniformLocation(program, 'matWorld'), false, this.#matWorld);
