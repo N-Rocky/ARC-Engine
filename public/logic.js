@@ -19,19 +19,11 @@ class Logic {
     #transpiler = false;
     #currentKey = null;
 
-    /**
-     * Determines how the game simulates/behaves. Handles most of the engine's features
-     * @constructor
-     */
     constructor() { // Set camera properties
         this.#viewport = new Camera([0, 0, 0], [canvas.width, canvas.height]);
         this.#camera = new Camera([0, 0, 0], [canvas.width, canvas.height]);
     }
 
-    /**
-     * Called every frame. Simulates the game while it is running
-     * @param {integer} timestamp - Milliseconds since last frame
-     */
     Update(timestamp) { // Runs once every frame
         if (timestamp - this.#lastUpdate < this.#timestep || !this.#running) { return; } // Early exit
         this.#lastUpdate = timestamp;
@@ -57,10 +49,6 @@ class Logic {
         this.#currentKey = null;
     }
 
-    /**
-     * Checks for collision between the provided entity and every other in the scene
-     * @param {Entity} entity - Entity to check collisions with every other
-     */
     CheckCollision(entity) {
         for (let other of this.#gameEntities) {
             if (!entity.kinematic && !entity.static && !other.static && other != entity) { // Entity can collide
@@ -123,29 +111,17 @@ class Logic {
         }
     }
 
-    /**
-     * Updates the position of the mouse
-     * @param {integer} x - Updated X position
-     * @param {integer} y - Updated Y position
-     */
     UpdateMouse(x, y) { // Mouse movement
         this.#mouseX = x;
         this.#mouseY = y;
     }
 
-    /**
-     * Handles mouse click input and updates the position of the mouse
-     * @param {integer} x - X click position
-     * @param {integer} y - Y click position
-     */
     HandleClick(x, y) { // Called every time the user clicks
         this.UpdateMouse(x, y);
         // Raycast to find objects clicked
     }
 
-    /**
-     * Calles the Start() method on each entity and begins updating the game every frame. Stops if already running
-     */
+    // Calles the Start() method on each entity and begins updating the game every frame. Stops if already running
     Playtest() { // Start and stop the game
         if (!this.#running) {
             for (let entity of this.#sceneEntities) { // Cloned instances
@@ -172,26 +148,14 @@ class Logic {
         }
     }
 
-    /**
-     * Creates a new entity object and assigns it to the correct list of entities
-     * @param {Vector3} position - Position of the entity
-     * @param {Vector3} rotation - Rotation of the entity
-     * @param {Vector3} scale - Scale of the entity
-     * @param {String} model - The filepath of the entity's model
-     * @param {String} texture - The filepath of the entity's texture
-     * @returns The entity created
-     */
-    CreateEntity(position, rotation, scale, model, texture) {
+    CreateEntity(position, rotation, scale, model, texture) { // Creates a new entity object and assigns it to the correct list of entities
         let entities = this.#running ? this.#gameEntities : this.#sceneEntities;
         const entity = new Entity(position, rotation, scale, model, texture, "Object" + (entities.length + 1));
         entities.push(entity);
         return entity;
     }
 
-    /**
-     * Saves the current state of the project (Saves entities as json and screenshots the viewport)
-     */
-    async SaveProject() {
+    async SaveProject() { // Saves the current state of the project (Saves entities as json and screenshots the viewport)
         let projectID = window.location.href.split("/");
         projectID = projectID[projectID.length - 1];
     
@@ -218,10 +182,7 @@ class Logic {
         });
     }
     
-    /**
-     * Loads the most recent save of the project (Scene entities and their data)
-     */
-    async LoadProject() {
+    async LoadProject() { // Loads the most recent save of the project (Scene entities and their data)
         let projectID = window.location.href.split("/");
         projectID = projectID[projectID.length - 1];
     
@@ -241,9 +202,6 @@ class Logic {
         }
     }
 
-    /**
-     * Loads the user's uploaded assets and public assets into the project
-     */
     async LoadAssets() { // Loading all asset files from the datatbase
         let projectID = window.location.href.split("/");
         projectID = projectID[projectID.length - 1];
@@ -333,40 +291,19 @@ class Logic {
 class Vector2 { // 2D Vectors
     x; y;
 
-    /**
-     * Creates a 2D vector that stores two values
-     * @constructor
-     * @param {any} x - The X value of the vector
-     * @param {any} y - The Y value of the vector
-     */
     constructor(x = 0, y = 0) {
         this.x = x;
         this.y = y;
     }
 
-    /**
-     * Adds another vector to this vector
-     * @param {Vector2} vector - The vector to be added
-     * @returns New 2D vector of the result
-     */
     add(vector) {
         return new Vector2(this.x + vector.x, this.y + vector.y);
     }
 
-    /**
-     * Subtracts another vector from this vector
-     * @param {Vector2} vector - The vector to be subtracted
-     * @returns New 2D vector of the result
-     */
     subtract(vector) {
         return new Vector2(this.x - vector.x, this.y - vector.y);
     }
 
-    /**
-     * Multiplies another vector with this vector
-     * @param {Vector2} vector - The vector to be multiplied
-     * @returns New 2D vector of the result
-     */
     multiply(factor) {
         return new Vector2(this.x * factor, this.y * factor);
     }
@@ -377,12 +314,6 @@ class Vector2 { // 2D Vectors
         return new Vector2(this.x / this.magnitude, this.y / this.magnitude);
     }
 
-    /**
-     * Calculates the dot product of two vectors
-     * @param {Vector2} vector1 - The first vector used in the calculation
-     * @param {Vector2} vector2 - The second vector used in the calculation
-     * @returns The dot product of the vectors
-     */
     static dot(vector1, vector2) {
         return vector1.x * vector2.x + vector1.y * vector2.y;
     }
@@ -391,59 +322,22 @@ class Vector2 { // 2D Vectors
 class Vector3 { // 3D Vectors
     x; y; z;
 
-    /**
-     * Creates a 3D vector that stores three values
-     * @constructor
-     * @param {any} x - The X value of the vector
-     * @param {any} y - The Y value of the vector
-     * @param {any} z - The Z value of the vector
-     */
     constructor(x = 0, y = 0, z = 0) {
         this.x = x;
         this.y = y;
         this.z = z;
     }
 
-    /**
-     * Adds another vector to this vector
-     * @param {Vector3} vector - The vector to be added
-     * @returns New 3D vector of the result
-     */
     add(vector) { return new Vector3(this.x + vector.x, this.y + vector.y, this.z + vector.z); }
 
-    /**
-     * Subtracts another vector from this vector
-     * @param {Vector3} vector - The vector to be subtracted
-     * @returns New 3D vector of the result
-     */
     subtract(vector) { return new Vector3(this.x - vector.x, this.y - vector.y, this.z - vector.z); }
 
-    /**
-     * Multiplies another vector with this vector
-     * @param {Vector3} vector - The vector to be multiplied
-     * @returns New 3D vector of the result
-     */
     multiply(factor) { return new Vector3(this.x * factor, this.y * factor, this.z * factor); }
 
-    /**
-     * Calculates the dot product of this vector and another
-     * @param {Vector3} vector - The vector used in the calculation
-     * @returns The dot product of the vectors
-     */
     dot(vector) { return this.x * vector.x + this.y * vector.y + this.z * vector.z; }
 
-    /**
-     * Calculates the sin and cos of an angle
-     * @param {integer} angle - The angle used in the calculation
-     * @returns New Vector2 containing the sin and cos values as x and y
-     */
     trigify(angle) { return new Vector2(Math.cos(angle * Math.PI / 180), Math.sin(angle * Math.PI / 180)); }
 
-    /**
-     * Calculates the cross product of this vector and another
-     * @param {Vector3} vector - The vector used in the calculation
-     * @returns The cross product of the vectors
-     */
     cross(vector) {
         const product = new Vector3();
         product.x = (this.y * vector.z) - (this.z * vector.y);
@@ -451,6 +345,7 @@ class Vector3 { // 3D Vectors
         product.z = (this.x * vector.y) - (this.y * vector.x);
         return product;
     }
+
     get magnitude() { return Math.sqrt(this.x ** 2 + this.y ** 2 + this.z ** 2); }
     get normalized() { return new Vector3(this.z, -this.y, this.x).unit; }
     get abs() { return new Vector3(Math.abs(this.x), Math.abs(this.y), Math.abs(this.z)); }
@@ -460,6 +355,10 @@ class Vector3 { // 3D Vectors
     }
 
     get clone() { return new Vector3(this.x, this.y, this.z); }
+
+    get r() { return this.x; } set r(value) { this.x = value; }
+    get g() { return this.y; } set g(value) { this.y = value; }
+    get b() { return this.z; } set b(value) { this.z = value; }
 
     get xValues() { return new Vector2(Math.cos(this.x * Math.PI / 180), Math.sin(this.x * Math.PI / 180)); }
     get yValues() { return new Vector2(Math.cos(this.y * Math.PI / 180), Math.sin(this.y * Math.PI / 180)); }
@@ -503,12 +402,6 @@ class Camera {
     position; rotation;
     resolution; fieldOfView;
 
-    /**
-     * Creates a camera object to be used while rendering the scene
-     * @constructor
-     * @param {Array} position - Three values representing the camera's position
-     * @param {Array} resolution - Two values representing the camera's resolution
-     */
     constructor(position, resolution) {
         this.position = new Vector3(position[0], position[1], position[2]);
         this.rotation = new Vector3(0, 0, 0);
@@ -518,16 +411,6 @@ class Camera {
 }
 
 class Entity { // Basis of every game object
-    /**
-     * Creates an Entity to be simulated and rendered in the scene
-     * @constructor
-     * @param {Vector3} position - The position of the entity
-     * @param {Vector3} rotation - The rotation of the entity
-     * @param {Vector3} scale - The scale of the entity
-     * @param {String} model - The filepath of the entity's model
-     * @param {String} texture - The filepath of the entity's texture
-     * @param {String} name - The name of the entity
-     */
     constructor(position, rotation, scale, model, texture, name) {
         // Identity and transform
         this.position = position; this.rotation = rotation; this.scale = scale;
@@ -539,7 +422,7 @@ class Entity { // Basis of every game object
         this.mass = 2; this.elasticity = 0.6;
         this.velocity = new Vector3(); this.acceleration = new Vector3();
         this.tag = "Default";
-        this.color = {r: 200, g: 200, b: 200};
+        this.color = new Vector3(200, 200, 200);
         if (logic.transpiler) { this.behavior = "def Start():\n\t\n\ndef Update():\n\t\n\ndef KeyPress(key):\n\t\n\ndef Collide(other):\n\t\n"; }
         else { this.behavior = "function Start() {\n\t\n}\n\nfunction Update() {\n\t\n}\n\nfunction KeyPress(key) {\n\t\n}\n\nfunction Collide(other) {\n\t\n}"; }
 
@@ -547,25 +430,17 @@ class Entity { // Basis of every game object
         CreateRenderer(this);
     }
 
-    /**
-     * Creates a deep copy of the entity
-     * @returns New Entity
-     */
     Clone() { // Returns a deep copy
         let clone = new Entity(this.position.clone, this.rotation.clone, this.scale.clone, this.model, this.texture, this.name);
         clone.kinematic = this.kinematic; clone.static = this.static; clone.gravity = this.gravity;
         clone.mass = this.mass; clone.elasticity = this.elasticity;
         clone.velocity = this.velocity.clone; clone.acceleration = this.acceleration.clone;
         clone.tag = this.tag;
-        clone.color = this.color;
+        clone.color = this.color.clone;
         clone.behavior = this.behavior;
         return clone;
     }
 
-    /**
-     * Converts the entity into a json format
-     * @returns Object containing the entity's attributes
-     */
     toJSON() { // Saves the entity as JSON
         let data = {};
         for (let attribute in this) { // Add all attributes
@@ -576,11 +451,6 @@ class Entity { // Basis of every game object
         return data;
     }
 
-    /**
-     * Creates a new entity from a json object
-     * @param {Object} data - The data to be used for the entity's creation
-     * @returns New Entity
-     */
     static fromJSON(data) { // Creates an entity from JSON
         let entity = new Entity(new Vector3(data.position.x, data.position.y, data.position.z),
             new Vector3(data.rotation.x, data.rotation.y, data.rotation.z),
@@ -591,16 +461,12 @@ class Entity { // Basis of every game object
         entity.velocity = new Vector3(data.velocity.x, data.velocity.y, data.velocity.z);
         entity.acceleration = new Vector3(data.acceleration.x, data.acceleration.y, data.acceleration.z);
         entity.tag = data.tag;
-        entity.color = data.color;
+        entity.color = new Vector3(data.color.x, data.color.y, data.color.z);
         entity.behavior = data.behavior;
         return entity;
     }
 
-    /**
-     * Loads the entities attributes into the inspector for manipulation
-     * @param {HTMLDivElement} terminal - The terminal used for editing the entity's behavior attribute
-     */
-    Inspect(terminal) {
+    Inspect(terminal) { // Loads the entities attributes into the inspector for manipulation
         const inspector = document.getElementById("inspector");
         while (inspector.lastElementChild.id != "inspectorHeader") {
             inspector.removeChild(inspector.lastElementChild);
@@ -662,19 +528,17 @@ class Entity { // Basis of every game object
         }
     }
 
-    /**
-     * Updates the position of the entity based on its velocity and acceleration
-     */
     Relocate() { // Move the entity based on its current acceleration and velocity
         this.acceleration = this.acceleration.unit;
         this.velocity = this.velocity.add(this.acceleration);
         this.position = this.position.add(this.velocity);
     }
 
-    /**
-     * Deletes the entity from the current scene
-     */
     Delete() { // Remove from current entities list
         logic.entities.splice(logic.entities.indexOf(this), 1);
     }
+}
+
+class BoxCollider {
+
 }
