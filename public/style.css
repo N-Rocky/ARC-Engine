@@ -229,6 +229,10 @@ body {
     width: 100%;
     background-color: var(--primary);
 }
+#project * {
+    opacity: 0;
+    animation: show 500ms 100ms ease-in-out forwards;
+}
 #canvas {
     background-image: url('Resources/Background.png');
     background-size: 100% 100%;
@@ -279,20 +283,6 @@ body {
 input[type="file"] {
     display: none;
 }
-#project * {
-    opacity: 0;
-    animation: show 500ms 100ms ease-in-out forwards;
-}
-@keyframes show {
-    0% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
-        transform: none;
-    }
-}
 .folder {
     display: flex;
     justify-content: center; align-items: center;
@@ -338,6 +328,10 @@ input[type="file"] {
     background-color: var(--primary);
     border-left: 2px solid var(--highlight);
 }
+#inspector * {
+    opacity: 0;
+    animation: show 100ms 100ms ease-in-out forwards;
+}
 #inspectorHeader {
     font-size: 150%;
     align-self: center;
@@ -360,6 +354,7 @@ input[type="file"] {
     width: 100%;
     margin-top: 1dvh;
     padding-left: 1dvw;
+    font-size: 150%;
     border-top: 1px solid var(--highlight);
     border-bottom: 1px solid var(--highlight);
     background-color: gray;
@@ -436,4 +431,10 @@ input[type="file"] {
     border: 2px solid var(--secondary);
     color: white;
     background-color: black;
+}
+
+/* Keyframes */
+@keyframes show {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
 }

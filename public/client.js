@@ -101,7 +101,7 @@ document.getElementById("plusIcon").onclick = () => {
 // Duplicates the selected entity
 document.getElementById("duplicateIcon").onclick = () => {
     if (logic.selected) {
-        logic.entities.push(logic.selected.Clone());
+        logic.entities.push(logic.selected.clone());
         ListEntities();
     }
 }
@@ -124,7 +124,7 @@ document.getElementById("discardIcon").onclick = async function() {
 // Viewport traversal inputs
 let inputs = {}; let shifting = false;
 window.addEventListener("keydown", function (event) { // Key down
-    if (event.ctrlKey && event.code == "KeyP") { // Playing the game
+    if (event.ctrlKey && event.code === "KeyP") { // Playing the game
         event.preventDefault();
         Playmode();
     }
@@ -144,12 +144,16 @@ window.addEventListener("keydown", function (event) { // Key down
         }
     }
 
-    if (event.ctrlKey && event.code == "Delete") {
+    if (event.ctrlKey && event.code === "Delete") { // Deleting an entity
         event.preventDefault();
         if (logic.selected != null) {
             logic.selected.Delete();
             ListEntities();
         }
+    }
+
+    if (logic.selected != null && event.code === "KeyF") { // Focusing on an entity
+        logic.camera.position = logic.selected.position.subtract(logic.camera.rotation.forward.multiply(5));
     }
 
     // Pass to logic and all objects that access keyboard input
@@ -161,6 +165,7 @@ window.addEventListener("keydown", function (event) { // Key down
     if (event.code == "KeyD" && !inputs.dKey) { inputs.dKey = true; ShiftViewport(); }
     if (event.code == "KeyQ" && !inputs.qKey) { inputs.qKey = true; ShiftViewport(); }
     if (event.code == "KeyE" && !inputs.eKey) { inputs.eKey = true; ShiftViewport(); }
+    if (event.code == "ShiftLeft" && !inputs.shift) { inputs.shift = true; }
 });
 
 /**
@@ -169,7 +174,8 @@ window.addEventListener("keydown", function (event) { // Key down
 function ShiftViewport() {
     if (!shifting && rightClick) {
         shifting = true;
-        const shiftAmmount = 0.01;
+        let shiftAmmount = 0.01;
+        if (inputs.shift) { shiftAmmount = 0.05; }
         if (inputs.wKey) {
             const forwards = logic.camera.rotation.forward.multiply(shiftAmmount);
             logic.camera.position = logic.camera.position.add(forwards);
@@ -209,6 +215,7 @@ window.addEventListener("keyup", function (event) { // Key up
     if (event.code == "KeyD") { inputs.dKey = false; }
     if (event.code == "KeyQ") { inputs.qKey = false; }
     if (event.code == "KeyE") { inputs.eKey = false; }
+    if (event.code == "ShiftLeft") { inputs.shift = false; }
 });
 
 // Mouse clicking on canvas

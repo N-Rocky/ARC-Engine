@@ -99,6 +99,11 @@
             script = entity.behavior
             if "def Update():" in script:
                 eval(script + "\nUpdate()")
+        
+        def TranspileUpdate(entity, other):
+            script = entity.behavior
+            if "def Collide():" in script:
+                eval(script + "\nCollide(other)")
 
         window.TranspileStart = TranspileStart
         window.TranspileUpdate = TranspileUpdate

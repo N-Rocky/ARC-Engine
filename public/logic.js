@@ -1,5 +1,6 @@
 class Logic {
-    #sceneEntities = []; #gameEntities = [];
+    #sceneEntities = [];
+    #gameEntities = [];
     #selected = null;
 
     // Game State
@@ -28,7 +29,9 @@ class Logic {
         if (timestamp - this.#lastUpdate < this.#timestep || !this.#running) { return; } // Early exit
         this.#lastUpdate = timestamp;
 
-        for (let entity of this.#gameEntities) {
+        for (let index = 0; index < this.#gameEntities.length; index++) {
+            // Execute entity code
+            const entity = this.#gameEntities[index];
             if (!this.#transpiler) { // Using vailla Javascript
                 if (entity.behavior.includes("function Update()")) { // Uses Update function
                     eval(entity.behavior + "\nUpdate()");
@@ -37,78 +40,158 @@ class Logic {
                     eval(entity.behavior + "KeyPress('" + this.#currentKey + "')");
                 }
             }
-            else { // Using transpiler
-                TranspileUpdate(entity);
+            else { TranspileUpdate(entity); } // Using transpiler
+
+            // Simulate physics
+            if (entity.gravity && !entity.kinematic) { entity.velocity.y += this.#gravity; }
+            entity.Relocate(); // Update position of entity by applying acceleration and velocity forces
+            if (!entity.static) { // Participates in the physics simulation
+                for (let splice = index + 1; splice < this.#gameEntities.length; splice++) {
+                    const other = this.#gameEntities[splice];
+                    if (other.static || !this.Collide(entity, other)) { continue; } // Static or no collision
+                    console.log("COLLIDED!");
+                }
             }
-            if (entity.gravity) { entity.velocity.y += this.#gravity; }
-            entity.Relocate(); // Update position of entity
-            this.CheckCollision(entity);
         }
 
         // Reset user input
         this.#currentKey = null;
     }
 
-    CheckCollision(entity) {
-        for (let other of this.#gameEntities) {
-            if (!entity.kinematic && !entity.static && !other.static && other != entity) { // Entity can collide
-                let xOverlap = entity.position.x + entity.scale.x / 2 >= other.position.x - other.scale.x / 2 && entity.position.x - entity.scale.x / 2 <= other.position.x + other.scale.x / 2;
-                let yOverlap = entity.position.y + entity.scale.y / 2 >= other.position.y - other.scale.y / 2 && entity.position.y - entity.scale.y / 2 <= other.position.y + other.scale.y / 2;
-                let zOverlap = entity.position.z + entity.scale.z / 2 >= other.position.z - other.scale.z / 2 && entity.position.z - entity.scale.z / 2 <= other.position.z + other.scale.z / 2;
-                let xCollision = false; let yCollision = false; let zCollision = false;
+    Collide(entity, other) { // Check for collision between two entities
+        let collided = false;
+        if (entity.collider.type == other.collider.type && entity.collider.type == "sphere") { // Sphere + Sphere collision
+            collided = this.SphereCollision(entity, other);
+        }
+        else if (entity.collider.type == "sphere" && other.collider.type == "line") { // Sphere + Line collision
+            collided = this.SphereLineCollision(entity, other);
+        }
+        else if (entity.collider.type == "line" && other.collider.type == "sphere") { // Line + Sphere collision
+            collided = this.SphereLineCollision(other, entity);
+        }
+        else if (entity.collider.type == other.collider.type && entity.collider.type == "capsule") { // Capsule + Capsule collision
+            collided = this.CapsuleCollision(entity, other);
+        }
 
-                while (xOverlap && yOverlap && zOverlap) {
-                    let xDistance; let yDistance; let zDistance;
-                    if (entity.position.x - entity.scale.x / 2 < other.position.x && entity.position.x + entity.scale.x / 2 > other.position.x) { xDistance = 0; }
-                    else if (entity.position.x - entity.scale.x / 2 < other.position.x) { xDistance = Math.abs(entity.position.x + entity.scale.x / 2 - other.position.x) / other.scale.x; }
-                    else if (entity.position.x + entity.scale.x / 2 > other.position.x) { xDistance = Math.abs(entity.position.x - entity.scale.x / 2 - other.position.x) / other.scale.x; }
-                    if (entity.position.y - entity.scale.y / 2 < other.position.y && entity.position.y + entity.scale.y / 2 > other.position.y) { yDistance = 0; }
-                    else if (entity.position.y - entity.scale.y / 2 < other.position.y) { yDistance = Math.abs(entity.position.y + entity.scale.y / 2 - other.position.y) / other.scale.y; }
-                    else if (entity.position.y + entity.scale.y / 2 > other.position.y) { yDistance = Math.abs(entity.position.y - entity.scale.y / 2 - other.position.y) / other.scale.y; }
-                    if (entity.position.z - entity.scale.z / 2 < other.position.z && entity.position.z + entity.scale.z / 2 > other.position.z) { zDistance = 0; }
-                    else if (entity.position.z - entity.scale.z / 2 < other.position.z) { zDistance = Math.abs(entity.position.z + entity.scale.z / 2 - other.position.z) / other.scale.z; }
-                    else if (entity.position.z + entity.scale.z / 2 > other.position.z) { zDistance = Math.abs(entity.position.z - entity.scale.z / 2 - other.position.z) / other.scale.z; }
-
-                    if (xDistance > yDistance && xDistance > zDistance) {
-                        if (entity.position.x < other.position.x) { entity.position.x -= 0.001; }
-                        else { entity.position.x += 0.001; }
-                        xCollision = true;
-                    }
-                    else if (yDistance > xDistance && yDistance > zDistance) {
-                        if (entity.position.y < other.position.y) { entity.position.y -= 0.001; }
-                        else { entity.position.y += 0.001; }
-                        yCollision = true;
-                    }
-                    else {
-                        if (entity.position.z < other.position.z) { entity.position.z -= 0.001; }
-                        else { entity.position.z += 0.001; }
-                        zCollision = true;
-                    }
-
-                    xOverlap = entity.position.x + entity.scale.x / 2 >= other.position.x - other.scale.x / 2 && entity.position.x - entity.scale.x / 2 <= other.position.x + other.scale.x / 2;
-                    yOverlap = entity.position.y + entity.scale.y / 2 >= other.position.y - other.scale.y / 2 && entity.position.y - entity.scale.y / 2 <= other.position.y + other.scale.y / 2;
-                    zOverlap = entity.position.z + entity.scale.z / 2 >= other.position.z - other.scale.z / 2 && entity.position.z - entity.scale.z / 2 <= other.position.z + other.scale.z / 2;
-                }
-
-                if (xCollision) { entity.velocity.x *= -1 * entity.elasticity; }
-                if (yCollision) { entity.velocity.y *= -1 * entity.elasticity; }
-                if (zCollision) { entity.velocity.z *= -1 * entity.elasticity; }
-                if (Math.abs(entity.velocity.x) < 0.002) { entity.velocity.x = 0; }
-                if (Math.abs(entity.velocity.y) < 0.002) { entity.velocity.y = 0; }
-                if (Math.abs(entity.velocity.z) < 0.002) { entity.velocity.z = 0; }
-
-                if (xCollision || yCollision || zCollision) {
-                    if (!this.#transpiler) { // Using vailla Javascript
-                        if (entity.behavior.includes("function Collide(")) { // Uses Update function
-                            eval(entity.behavior + "\nCollide(other)");
-                        }
-                    }
-                    else { // Using transpiler
-                        TranspileUpdate(entity);
-                    }
-                }
+        if (collided) {
+            if (!this.#transpiler) { // Using vailla Javascript
+                if (entity.behavior.includes("function Collide(")) { eval(entity.behavior + "\nCollide(other)"); }
+                if (other.behavior.includes("function Collide(")) { eval(other.behavior + "\nCollide(entity)"); }
+            }
+            else { // Using transpiler
+                TranspileCollide(entity, other);
+                TranspileCollide(other, entity);
             }
         }
+
+        return collided;
+    }
+
+    ClosestPoint(start, end, point) {
+        const startDist = start.subtract(point);
+        const endDist = point.subtract(end);
+        if (end.subtract(start).unit.dot(startDist) > 0) {
+            return start;
+        }
+        else if (end.subtract(start).unit.dot(endDist) > 0) {
+            return end;
+        }
+        const closestDist = end.subtract(start).unit.dot(startDist);
+        const closestVec = end.subtract(start).unit.multiply(closestDist);
+        return start.subtract(closestVec);
+    }
+
+    SphereCollision(entity, other) { // Sphere + Sphere collision
+        const col1 = entity.collider; const col2 = other.collider;
+        const radius1 = Math.max(col1.width, col1.height); const radius2 = Math.max(col2.width, col2.height);
+        if (radius1 + radius2 >= other.position.subtract(entity.position).magnitude) {
+            let invMass1 = 0; if (entity.mass != 0 && !entity.kinematic) { invMass1 = 1 / entity.mass; }
+            let invMass2 = 0; if (other.mass != 0 && !other.kinematic) { invMass2 = 1 / other.mass; }
+            const dist = entity.position.subtract(other.position);
+            const pen_depth = radius1 + radius2 - dist.magnitude;
+            const pen_res = dist.unit.multiply(pen_depth / (invMass1 + invMass2));
+            entity.position = entity.position.add(pen_res.multiply(invMass1));
+            other.position = other.position.add(pen_res.multiply(-invMass2));
+
+            const normal = entity.position.subtract(other.position).unit;
+            const relVel = entity.velocity.subtract(other.velocity);
+            const sepVel = relVel.dot(normal);
+            const newSepVel = -sepVel * Math.max(entity.elasticity, other.elasticity);
+
+            const vsepDiff = newSepVel - sepVel;
+            const impulse = vsepDiff / (invMass1 + invMass2);
+            const impulseVec = normal.multiply(impulse);
+
+            entity.velocity = entity.velocity.add(impulseVec.multiply(invMass1));
+            other.velocity = other.velocity.add(impulseVec.multiply(-invMass2));
+
+            return true;
+        }
+        return false;
+    }
+
+    SphereLineCollision(entity, other) { // Sphere + Line collision
+        const col1 = entity.collider; const col2 = other.collider;
+        const lineStart = other.position.subtract(other.rotation.forward.multiply(other.collider.width / 2));
+        const lineEnd = other.position.add(other.rotation.forward.multiply(other.collider.width / 2));
+        const closestPoint = this.ClosestPoint(lineStart, lineEnd, entity.position);
+        if (closestPoint.subtract(entity.position).magnitude <= col1.width) {
+            const penVec = entity.position.subtract(closestPoint);
+            entity.position = entity.position.add(penVec.unit.multiply(col1.width - penVec.magnitude));
+            const normal = entity.position.subtract(closestPoint).unit;
+            const sepVel = entity.velocity.dot(normal);
+            const newSepVel = -sepVel * entity.elasticity;
+            const vsepDiff = sepVel - newSepVel;
+            entity.velocity = entity.velocity.add(normal.multiply(-vsepDiff));
+            return true;
+        }
+        return false;
+    }
+
+    CapsuleCollision(entity, other) {
+        const col1 = entity.collider; const col2 = other.collider;
+        const entityStart = entity.position.subtract(entity.rotation.forward.multiply(col1.height / 2));
+        const entityEnd = entity.position.add(entity.rotation.forward.multiply(col1.height / 2));
+        const otherStart = other.position.subtract(other.rotation.forward.multiply(col2.height / 2));
+        const otherEnd = other.position.add(other.rotation.forward.multiply(col2.height / 2));
+        let shortestDist = this.ClosestPoint(otherStart, otherEnd, entityStart).subtract(entityStart).magnitude;
+        let closestPoints = [entityStart, this.ClosestPoint(otherStart, otherEnd, entityStart)];
+        if (this.ClosestPoint(otherStart, otherEnd, entityEnd).subtract(entityEnd).magnitude < shortestDist) {
+            shortestDist = this.ClosestPoint(otherStart, otherEnd, entityEnd).subtract(entityEnd).magnitude;
+            closestPoints = [entityEnd, this.ClosestPoint(otherStart, otherEnd, entityEnd)];
+        }
+        if (this.ClosestPoint(entityStart, entityEnd, otherStart).subtract(otherStart).magnitude < shortestDist) {
+            shortestDist = this.ClosestPoint(entityStart, entityEnd, otherStart).subtract(otherStart).magnitude;
+            closestPoints = [this.ClosestPoint(entityStart, entityEnd, otherStart), otherStart];
+        }
+        if (this.ClosestPoint(entityStart, entityEnd, otherEnd).subtract(otherEnd).magnitude < shortestDist) {
+            shortestDist = this.ClosestPoint(entityStart, entityEnd, otherEnd).subtract(otherEnd).magnitude;
+            closestPoints = [this.ClosestPoint(entityStart, entityEnd, otherEnd), otherEnd];
+        }
+
+        if (col1.width + col2.width >= closestPoints[0].subtract(closestPoints[1]).magnitude) {
+            let invMass1 = 0; if (entity.mass != 0 && !entity.kinematic) { invMass1 = 1 / entity.mass; }
+            let invMass2 = 0; if (other.mass != 0 && !other.kinematic) { invMass2 = 1 / other.mass; }
+            const dist = closestPoints[0].subtract(closestPoints[1]);
+            const pen_depth = col1.width + col2.width - dist.magnitude;
+            const pen_res = dist.unit.multiply(pen_depth / (invMass1 + invMass2));
+            entity.position = entity.position.add(pen_res.multiply(invMass1));
+            other.position = other.position.add(pen_res.multiply(-invMass2));
+
+            const normal = closestPoints[0].subtract(closestPoints[1]).unit;
+            const relVel = entity.velocity.subtract(other.velocity);
+            const sepVel = relVel.dot(normal);
+            const newSepVel = -sepVel * Math.max(entity.elasticity, other.elasticity);
+
+            const vsepDiff = newSepVel - sepVel;
+            const impulse = vsepDiff / (invMass1 + invMass2);
+            const impulseVec = normal.multiply(impulse);
+
+            entity.velocity = entity.velocity.add(impulseVec.multiply(invMass1));
+            other.velocity = other.velocity.add(impulseVec.multiply(-invMass2));
+            return true;
+        }
+        return false;
     }
 
     UpdateMouse(x, y) { // Mouse movement
@@ -121,11 +204,10 @@ class Logic {
         // Raycast to find objects clicked
     }
 
-    // Calles the Start() method on each entity and begins updating the game every frame. Stops if already running
     Playtest() { // Start and stop the game
         if (!this.#running) {
             for (let entity of this.#sceneEntities) { // Cloned instances
-                const clone = entity.Clone();
+                const clone = entity.clone();
                 this.#gameEntities.push(clone);
             }
             this.#camera.position = new Vector3(0, 0, 0);
@@ -296,26 +378,21 @@ class Vector2 { // 2D Vectors
         this.y = y;
     }
 
-    add(vector) {
-        return new Vector2(this.x + vector.x, this.y + vector.y);
-    }
+    add(vector) { return new Vector2(this.x + vector.x, this.y + vector.y); }
 
-    subtract(vector) {
-        return new Vector2(this.x - vector.x, this.y - vector.y);
-    }
+    subtract(vector) { return new Vector2(this.x - vector.x, this.y - vector.y); }
 
-    multiply(factor) {
-        return new Vector2(this.x * factor, this.y * factor);
-    }
+    multiply(factor) { return new Vector2(this.x * factor, this.y * factor); }
+
+    dot(vector) { return this.x * vector.x + this.y * vector.y; }
+
+    cross(vector){ return this.x * vector.y - this.y * vector.x; }
+
     get magnitude() { return Math.sqrt(this.x ** 2 + this.y ** 2); }
     get normalized() { return new Vector2(-this.y, this.x).unit; }
     get unit() {
         if (this.magnitude == 0) { return new Vector2(); }
         return new Vector2(this.x / this.magnitude, this.y / this.magnitude);
-    }
-
-    static dot(vector1, vector2) {
-        return vector1.x * vector2.x + vector1.y * vector2.y;
     }
 }
 
@@ -394,7 +471,26 @@ class Vector3 { // 3D Vectors
     //get right() { return new Vector3(this.yValues.x, 0, -this.yValues.y).multiply(this.zValues.x).add(new Vector3(-this.yValues.x * this.xValues.y, this.xValues.x, -this.yValues.y * this.xValues.y).multiply(this.zValues.y)); }
     get right() { return new Vector3(-this.yValues.x, 0, this.yValues.y); }
     //get right() { return this.forward.cross(new Vector3(0, 1, 0)); }
+}
 
+class Matrix {
+    constructor(rows, cols) {
+        this.rows = rows;
+        this.cols = cols;
+        this.data = [];
+
+        for (let y = 0; index < this.rows; y++) {
+            this.data[y] = [];
+            for (let x = 0; x < this.cols; x++) {
+                this.data[y][x] = 0;
+            }
+        }
+    }
+
+    multiply(vector) {
+        let result = new Vector3();
+        
+    }
 }
 
 // Basis for the game and viewport cameras
@@ -418,9 +514,10 @@ class Entity { // Basis of every game object
         this.name = name;
 
         // Default values
-        this.kinematic = false; this.static = false; this.gravity = false;
-        this.mass = 2; this.elasticity = 0.6;
+        this.kinematic = false; this.static = false; this.gravity = true;
+        this.collider = new Collider(); this.mass = 2; this.elasticity = 0.6;
         this.velocity = new Vector3(); this.acceleration = new Vector3();
+        this.angularVelocity = new Vector3();
         this.tag = "Default";
         this.color = new Vector3(200, 200, 200);
         if (logic.transpiler) { this.behavior = "def Start():\n\t\n\ndef Update():\n\t\n\ndef KeyPress(key):\n\t\n\ndef Collide(other):\n\t\n"; }
@@ -430,11 +527,12 @@ class Entity { // Basis of every game object
         CreateRenderer(this);
     }
 
-    Clone() { // Returns a deep copy
+    clone() { // Returns a deep copy
         let clone = new Entity(this.position.clone, this.rotation.clone, this.scale.clone, this.model, this.texture, this.name);
         clone.kinematic = this.kinematic; clone.static = this.static; clone.gravity = this.gravity;
-        clone.mass = this.mass; clone.elasticity = this.elasticity;
+        clone.collider = this.collider.clone; clone.mass = this.mass; clone.elasticity = this.elasticity;
         clone.velocity = this.velocity.clone; clone.acceleration = this.acceleration.clone;
+        clone.angularVelocity = this.angularVelocity.clone;
         clone.tag = this.tag;
         clone.color = this.color.clone;
         clone.behavior = this.behavior;
@@ -457,9 +555,11 @@ class Entity { // Basis of every game object
             new Vector3(data.scale.x, data.scale.y, data.scale.z), data.model, data.texture, data.name);
 
         entity.kinematic = data.kinematic; entity.static = data.static; entity.gravity = data.gravity;
+        entity.collider = new Collider(data.collider.type, data.collider.width, data.collider.height);
         entity.mass = data.mass; entity.elasticity = data.elasticity;
         entity.velocity = new Vector3(data.velocity.x, data.velocity.y, data.velocity.z);
         entity.acceleration = new Vector3(data.acceleration.x, data.acceleration.y, data.acceleration.z);
+        entity.angularVelocity = new Vector3(data.angularVelocity.x, data.angularVelocity.y, data.angularVelocity.z);
         entity.tag = data.tag;
         entity.color = new Vector3(data.color.x, data.color.y, data.color.z);
         entity.behavior = data.behavior;
@@ -515,7 +615,36 @@ class Entity { // Basis of every game object
                 }
             }
             else if (type == "Physics") {
-                
+                const type = document.createElement("INPUT"); type.classList.add("componentItem");
+                type.type = "text"; type.name = "type"; type.value = this.collider.type;
+                const label = document.createElement("Label"); label.classList.add("componentItem");
+                label.htmlFor = "type"; label.textContent = "type:";
+                type.oninput = () => { this.collider.type = type.value; }
+                content.appendChild(label); content.appendChild(type);
+                for (let attribute of ["width", "height"]) {
+                    const input = document.createElement("INPUT"); input.classList.add("componentItem");
+                    input.type = "number"; input.name = attribute; input.value = this.collider[attribute];
+                    const label = document.createElement("Label"); label.classList.add("componentItem");
+                    label.htmlFor = attribute; label.textContent = `${attribute}:`;
+                    input.oninput = () => { this.collider[attribute] = parseInt(input.value); }
+                    content.appendChild(label); content.appendChild(input);
+                }
+                for (let attribute of ["mass", "elasticity"]) {
+                    const input = document.createElement("INPUT"); input.classList.add("componentItem");
+                    input.type = "number"; input.name = attribute; input.value = this[attribute];
+                    const label = document.createElement("Label"); label.classList.add("componentItem");
+                    label.htmlFor = attribute; label.textContent = `${attribute}:`;
+                    input.oninput = () => { this[attribute] = parseInt(input.value); }
+                    content.appendChild(label); content.appendChild(input);
+                }
+                for (let attribute of ["kinematic", "static", "gravity"]) {
+                    const input = document.createElement("INPUT"); input.classList.add("componentItem");
+                    input.type = "checkbox"; input.name = attribute; input.checked = this[attribute];
+                    const label = document.createElement("Label"); label.classList.add("componentItem");
+                    label.htmlFor = attribute; label.textContent = `${attribute}:`;
+                    input.oninput = () => { this[attribute] = input.checked; }
+                    content.appendChild(label); content.appendChild(input);
+                }
             }
             else if (type == "Behavior") {
                 header.onclick = () => {
@@ -532,6 +661,7 @@ class Entity { // Basis of every game object
         this.acceleration = this.acceleration.unit;
         this.velocity = this.velocity.add(this.acceleration);
         this.position = this.position.add(this.velocity);
+        this.rotation = this.rotation.add(this.angularVelocity);
     }
 
     Delete() { // Remove from current entities list
@@ -539,6 +669,12 @@ class Entity { // Basis of every game object
     }
 }
 
-class BoxCollider {
+class Collider {
+    constructor(type = "sphere", width = 1, height = 1) {
+        this.type = type;
+        this.width = width;
+        this.height = height;
+    }
 
+    get clone() { return new Collider(this.type, this.width, this.height); }
 }
