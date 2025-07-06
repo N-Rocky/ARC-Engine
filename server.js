@@ -6,6 +6,7 @@ const passport = require('passport')
 const parser = require("body-parser");
 const fileUpload = require('express-fileupload');
 const path = require("path");
+const assimpjs = require ('assimpjs')();
 const { v4: uuidv4 } = require('uuid');
 
 // Database for logged in clients
@@ -179,24 +180,37 @@ app.post("/files", (req, res) => { // Request list of files in the database
     res.send(JSON.stringify({ files: files }));
 });
 
-app.post("/project/:projectID/upload", (req, res) => { // Upload assets to the database
+app.post("/project/:projectID/upload", async (req, res) => { // Upload assets to the database
     if (!req.user) { return res.redirect('/'); }
     const id = req.user.emails[0].value;
 
-    let asset = req.files.file;
-
+    const asset = req.files.file;
     let fileType = null;
-    if ([".png", ".jpg", "jpeg"].includes(asset.name.slice(-4))) { // Supported Images
-        fileType = "Images";
-    }
-    else if ([".mp3", ".wav"].includes(asset.name.slice(-4))) { // Supported Audio
-        fileType = "Audio"
-    }
 
-    if (fileType != null) { // Uploaded a supported file type
+    if ([".png", ".jpg", "jpeg"].includes(asset.name.slice(-4))) { fileType = "Images"; }
+    else if ([".mp3", ".wav"].includes(asset.name.slice(-4))) { fileType = "Audio"; }
+    else if ([".fbx"].includes(asset.name.slice(-4))) { fileType = "Models"; }
+
+    if (fileType == "Images" || fileType == "Audio") { // Uploaded a supported image or audio file
         asset.mv(`./Database/${id}/${req.params.projectID}/Assets/${fileType}/${asset.name}`, function (err) {
             if (err) { console.log(err); } else { console.log("Asset Uploaded"); }
         });
+    }
+    else if (fileType == "Models") { // Uploaded a supported model file
+        try { // Convert into json
+            const fileBuffer = asset.data;
+            const ajs = await assimpjs;
+            const result = ajs.ConvertFile(
+                asset.name, 'assjson', fileBuffer,
+                function (includeName) { return false;},
+                function (includeName) { return null; }
+            );
+            if (!result.IsSuccess() || result.FileCount() === 0) {
+                console.log(result.GetErrorCode());
+            }
+            const resultFile = result.GetFile(0); const jsonContent = new TextDecoder().decode(resultFile.GetContent());
+            fs.writeFileSync(`./Database/${id}/${req.params.projectID}/Assets/${fileType}/${asset.name.split(".")[0]}.json`, jsonContent, 'utf8');
+        } catch (err) { console.log(err); }
     }
 
     res.end();

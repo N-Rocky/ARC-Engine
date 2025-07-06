@@ -41,11 +41,6 @@ function CreateShaders(canvas, gl) {
         // Reference the camera and target
         const pos = camera.position;
         const rot = camera.rotation;
-
-        const rotX = new Vector2(Math.cos(glMatrix.glMatrix.toRadian(rot.x)), Math.sin(glMatrix.glMatrix.toRadian(rot.x)));
-        const rotY = new Vector2(Math.cos(glMatrix.glMatrix.toRadian(rot.y)), Math.sin(glMatrix.glMatrix.toRadian(rot.y)));
-        const rotZ = new Vector2(Math.cos(glMatrix.glMatrix.toRadian(rot.z)), Math.sin(glMatrix.glMatrix.toRadian(rot.z)));
-
         const target = pos.add(rot.forward);
 
         // Arg 1 = position, Arg 2 = look at, Arg 3 = up
