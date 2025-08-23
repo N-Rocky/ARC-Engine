@@ -1,12 +1,6 @@
 // WebGL Application
 let posAttrib; let texCoordAttrib; let normalAttrib;
 
-/**
- * Creates the shader program to be used when rendering the scene
- * @param {HTMLCanvasElement} canvas - Canvas to be drawn on
- * @param {*} gl - WebGL used to generate the program and do the rendering
- * @returns Function that renders the entities given to it based on the camera's position and rotation
- */
 function CreateShaders(canvas, gl) {
     // Create the shader program to link the vertex and fragment shaders together
     const shaderProgram = CreateProgram(gl, vertexShaderSourceCode, fragmentShaderSourceCode);
@@ -78,44 +72,37 @@ function CreateShaders(canvas, gl) {
     return frame;
 }
 
-/**
- * Loads all relevant assets and creates a renderer for an entity to use
- * @param {Entity} entity - Entity to create a VAO and renderer for
- */
+// Loads all relevant assets and creates a renderer for an entity to use
 function CreateRenderer(entity) {
     LoadJSONResource(window.location.href + "/" + entity.model, function (modelError, model) {
-        if (modelError) { console.error(modelError); }
-        else {
-            // Create buffers (all vertex data to be uploaded to the GPU)
-            const vertices = CreateStaticVertexBuffer(gl, new Float32Array(model.meshes[0].vertices));
-            const texCoords = CreateStaticVertexBuffer(gl, new Float32Array(model.meshes[0].texturecoords[0]));
-            const indices = CreateStaticIndexBuffer(gl, new Uint16Array([].concat.apply([], model.meshes[0].faces)));
-            const normals = CreateStaticVertexBuffer(gl, new Float32Array(model.meshes[0].normals));
-            const indexCount = [].concat.apply([], model.meshes[0].faces).length;
-            const vao = Create3DInterleavedBufferVao(gl, vertices, indices, texCoords, normals, posAttrib, texCoordAttrib, normalAttrib);
-            LoadImage(window.location.href + "/" + entity.texture, function (imageError, image) {
-                if (imageError) { console.error(imageError); }
-                else {
-                    const textureSize = image.width * image.height * 4; // R, G, B, a
-                    let pixels = new Uint8Array(textureSize);
-                    gl.readPixels(0, 0, image.width, image.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-                    for (let index = 0; index < textureSize; index += 4) {
-                        pixels[index] = 0;
-                    }
+        if (modelError) { return console.error(modelError); }
+        // Create buffers (all vertex data to be uploaded to the GPU)
+        const vertices = CreateStaticVertexBuffer(gl, new Float32Array(model.meshes[0].vertices));
+        const texCoords = CreateStaticVertexBuffer(gl, new Float32Array(model.meshes[0].texturecoords[0]));
+        const indices = CreateStaticIndexBuffer(gl, new Uint16Array([].concat.apply([], model.meshes[0].faces)));
+        const normals = CreateStaticVertexBuffer(gl, new Float32Array(model.meshes[0].normals));
+        const indexCount = [].concat.apply([], model.meshes[0].faces).length;
+        const vao = Create3DInterleavedBufferVao(gl, vertices, indices, texCoords, normals, posAttrib, texCoordAttrib, normalAttrib);
+        LoadImage(window.location.href + "/" + entity.texture, function (imageError, image) {
+            if (imageError) { return console.error(imageError); }
+            const textureSize = image.width * image.height * 4; // R, G, B, a
+            let pixels = new Uint8Array(textureSize);
+            gl.readPixels(0, 0, image.width, image.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+            for (let index = 0; index < textureSize; index += 4) {
+                pixels[index] = 0;
+            }
 
-                    const texture = gl.createTexture();
-                    gl.bindTexture(gl.TEXTURE_2D, texture);
-                    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); // S = U
-                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); // T = V
-                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-                    gl.bindTexture(gl.TEXTURE_2D, null);
-                    entity.renderer = new Renderer(entity, texture, vao, indexCount);
-                }
-            });
-        }
+            const texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); // S = U
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); // T = V
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            entity.renderer = new Renderer(entity, texture, vao, indexCount);
+        });
     });
 }
 
@@ -129,6 +116,7 @@ const vertexShaderSourceCode = `#version 300 es
 
     out vec2 fragmentTexCoord;
     out vec3 fragmentNormal;
+    out vec3 fragmentPosition;
 
     uniform mat4 matWorld;
     uniform mat4 matViewProj;
@@ -136,6 +124,7 @@ const vertexShaderSourceCode = `#version 300 es
     void main() {
         fragmentTexCoord = vertexTexCoord;
 
+        fragmentPosition = (matWorld * vec4(vertexPosition, 1.0)).xyz;
         fragmentNormal = (matWorld * vec4(vertexNormal, 0.0)).xyz; // Normals in world space
         //fragmentNormal = vertexNormal; // Normals local to model
 
@@ -147,6 +136,7 @@ const fragmentShaderSourceCode = `#version 300 es
     precision mediump float;
 
     in vec2 fragmentTexCoord;
+    in vec3 fragmentPosition;
     in vec3 fragmentNormal;
 
     uniform vec2 u_resolution;
@@ -157,48 +147,39 @@ const fragmentShaderSourceCode = `#version 300 es
     out vec4 outputColor;
 
     void main() {
-        //vec3 ambientLightIntensity = vec3(1.0, 1.0, 1.0); // 2D testing only!
-        vec3 ambientLightIntensity = vec3(0.1, 0.1, 0.1);
-        vec3 sunlightIntensity = vec3(1.0, 1.0, 1.0);
-        vec3 sunlightDirection = vec3(0.5, 1.0, -0.8);
-
+        float ambientIntensity = 0.2;
         vec2 st = gl_FragCoord.xy / u_resolution.xy;
         vec3 surfaceNormal = normalize(fragmentNormal);
-        vec3 sunlightDirNormal = normalize(sunlightDirection);
         vec4 texel = texture(sampler, fragmentTexCoord);
-
-        vec3 lightIntensity = ambientLightIntensity + sunlightIntensity * max(dot(surfaceNormal, sunlightDirNormal), 0.0);
-
         switch(u_lighting) {
             case 0: // No lighting
                 outputColor = vec4(texel.rgb * u_colorTint, texel.a); break;
             case 1: // Phong lighting
-
-                //outputColor = vec4(texel.rg * fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453), 0.0, 1.0);
-
-                // Grid
-                //vec3 color = vec3(0.0);
-                //st *= 10.0;
-                //st = fract(st);
-                //color = vec3(st, 0.0);
-                //outputColor = vec4(color, 1.0);
+                // Default
+                //vec3 sunDirNormal = normalize(vec3(0.5, 1.0, -0.8));
+                //vec3 sunIntensity = ambientIntensity + 1.0 * max(dot(surfaceNormal, sunDirNormal), 0.0);
+                //outputColor = vec4(texel.rgb * u_colorTint * sunIntensity, texel.a);
 
                 // Rings
-                //st.x *= u_resolution.x/u_resolution.y;
-                //vec3 color = vec3(0.0);
-                //float d = 0.0;
-                //st = st *2.-1.;
-                //d = length( abs(st)-.3 );
-                //outputColor = vec4(vec3(fract(d*10.0)),1.0); break;
+                //outputColor = vec4(vec3(fract(length(abs(fragmentPosition)-.3)*5.0)),1.0);
 
-                // Circle mask
-                //float pct = 0.0;
-                //pct = step(0.2, distance(st, vec2(0.5)));
-                //outputColor = vec4(vec3(pct) * texel.rgb, 1.0); break;
+                // Normal gradient
+                //outputColor = vec4(vec3(st, 0.0) * texel.rgb, 1.0);
+
+
+                vec3 albedo = vec3(texel.rgb * u_colorTint);
+                vec3 pointLight = vec3(0, 0, 0);
+                vec3 toLightNormal = normalize(pointLight - fragmentPosition);
+                float lightDist = length(fragmentPosition - pointLight) / 1.0;
+                float lightIntensity = ambientIntensity + max(dot(surfaceNormal, toLightNormal), 0.0) / lightDist;
+                outputColor = vec4(albedo * lightIntensity, texel.a);
+
+
+                // Soft lighting
+                //float lightDistance = length(fragmentPosition - pointLight) / 2.0;
+                //outputColor = vec4(albedo / lightDistance, texel.a);
+
                 
-                //outputColor = vec4(vec3(st, 0.0) * texel.rgb, 1.0); break;
-                outputColor = vec4(texel.rgb * u_colorTint * lightIntensity, texel.a); break;
-
                 break;
             case 2: // Highlighting
                 outputColor = vec4(1.0, 0.6, 0.0, 1.0); break;
@@ -212,14 +193,6 @@ class Renderer {
     #scaleVec = glMatrix.vec3.create();
     #rotation = glMatrix.quat.create();
 
-    /**
-     * Creates a renderer for an entity
-     * @constructor
-     * @param {Entity} entity - The entity containing the renderer
-     * @param {WebGLTexture} texture - The texture to be rendered
-     * @param {*} vao - The vertex array object based on the entity's model and texture
-     * @param {*} numIndices - The number of indices in the entity's model
-     */
     constructor(entity, texture, vao, numIndices) {
         this.entity = entity;
         this.texture = texture;
@@ -227,12 +200,7 @@ class Renderer {
         this.numIndices = numIndices;
     }
 
-    /**
-     * Renders the entity on the canvas
-     * @param {WebGL2RenderingContext} gl - Used to render the object
-     * @param {WebGLProgram} program - Program containing vertex and fragmet shaders
-     * @param {boolean} outline - Renders an outline if true, normal entity if not
-     */
+    // Renders the entity onto the canvas
     Render(gl, program, outline = false) {
         const position = glMatrix.vec3.fromValues(this.entity.position.x, this.entity.position.y, this.entity.position.z);
         const angle = this.entity.rotation.multiply(Math.PI / 180);

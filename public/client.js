@@ -1,9 +1,7 @@
 // Scene/Game Window, WebGL Context, Logic, and Frame Render method
 let canvas; let gl; let logic; let frame;
 
-/**
- * Initializes the canvas, graphics library to begin rendering, logic, and project files
- */
+// Initializes the canvas, graphics library to begin rendering, logic, and project files
 async function init() { // Initialize graphics and logic
 
     // Canvas and GL
@@ -26,9 +24,7 @@ async function init() { // Initialize graphics and logic
     ListEntities();
 }
 
-/**
- * Enters and exits playtest mode to demo the current state of the game
- */
+// Enters and exits playtest mode to demo the current state of the game
 function Playmode() { // Enter playtest mode
     canvas.classList.toggle('game');
     canvas.width = canvas.clientWidth;
@@ -38,10 +34,7 @@ function Playmode() { // Enter playtest mode
     logic.selected = null; ListEntities();
 }
 
-/**
- * Updates the logic and renders the screen based on the camera's position and rotation
- * @param {integer} timestamp - Milliseconds since last frame
- */
+// Updates the logic and renders the screen based on the camera's position and rotation
 function RenderScreen(timestamp) { // Render loop
     logic.Update(timestamp);
     frame(logic.camera, logic.entities, logic.selected);
@@ -64,9 +57,7 @@ document.getElementById("fileSelect").onchange = async function(event) {
     logic.LoadAssets();
 }
 
-/**
- * Displays a list view in the inspector of all the entities in the scene
- */
+// Displays a list view in the inspector of all the entities in the scene
 function ListEntities() { // List the entity hierarchy
     const inspector = document.getElementById("inspector");
     while (inspector.lastElementChild.id != "inspectorHeader") {

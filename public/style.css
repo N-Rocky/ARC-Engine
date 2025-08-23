@@ -328,6 +328,11 @@ input[type="file"] {
     background-color: var(--secondary);
     border: 2px solid var(--highlight);
     box-shadow: rgba(0, 0, 0, 0.5) 0px -8px 10px;
+    transition: 0.2s;
+}
+.file:hover {
+    box-shadow: rgba(0, 0, 0, 0.5) 0px 16px 10px;
+    border-color: var(--highlight);
 }
 
 /* Entity inspector and list view */
