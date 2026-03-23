@@ -114,7 +114,11 @@ app.post("/new", (req, res) => { // Creating a new project in the database
     const projectID = uuidv4();
     fs.mkdirSync(`./Database/${id}/${projectID}`);
     clients[id][projectID] = { owner: id, path: `./Database/${id}/${projectID}` };
-    const configFile = { name: req.body.name, description: req.body.description,
+    const configFile = {
+        owner: id,
+        name: req.body.name,
+        description: req.body.description,
+        published: false,
         cover: "Resources/ProjectIcon.png"
     };
 
@@ -134,6 +138,35 @@ app.post("/new", (req, res) => { // Creating a new project in the database
     }
 
     res.send(JSON.stringify(data));
+});
+
+app.post("/delete", (req, res) => { // Deleting a project from the database
+    if (!req.user) { return res.redirect('/'); }
+    const id = req.user.emails[0].value;
+
+    fs.rm(`./Database/${id}/${req.body.projectID}`, { recursive: true, force: true }, (error) => {
+        if (error) {
+            console.log(`Failed to delete ${req.body.projectID}:`, error);
+            return res.end();
+        }
+    });
+    delete clients[id][req.body.projectID];
+
+    res.end();
+});
+
+app.post("/publish", (req, res) => { // Publishing / Unpublishing a project
+    if (!req.user) { return res.redirect('/'); }
+    const id = req.user.emails[0].value;
+
+    // SQL databse entry, linking private folder to public list
+
+    // Update config file
+    let configFile = JSON.parse(fs.readFileSync(`./Database/${id}/${req.body.projectID}/config.json`));
+    configFile.published = !configFile.published;
+    fs.writeFileSync(`./Database/${id}/${req.body.projectID}/config.json`, JSON.stringify(configFile));
+
+    res.end();
 });
 
 app.get("/project/:projectID", (req, res) => { // Opening the game engine

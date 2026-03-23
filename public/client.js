@@ -100,6 +100,7 @@ document.getElementById("duplicateIcon").onclick = () => {
 // Saving the current state of the scene
 document.getElementById("saveIcon").onclick = () => {
     if (confirm("Save the project in its current state?")) {
+        RenderScreen();
         logic.SaveProject();
     }
 }
@@ -123,7 +124,7 @@ window.addEventListener("keydown", function (event) { // Key down
     if (event.ctrlKey && event.code === "KeyS") { // Saving the project
         event.preventDefault();
         if (confirm("Save the project in its current state?")) {
-            RenderScreen(0);
+            RenderScreen();
             logic.SaveProject();
         }
     }
@@ -159,9 +160,7 @@ window.addEventListener("keydown", function (event) { // Key down
     if (event.code == "ShiftLeft" && !inputs.shift) { inputs.shift = true; }
 });
 
-/**
- * Shifts the viewport camera, allowing users to traverse the scene in 3D space
- */
+// Shifts the viewport camera, allowing users to traverse the scene in 3D space
 function ShiftViewport() {
     if (!shifting && rightClick) {
         shifting = true;

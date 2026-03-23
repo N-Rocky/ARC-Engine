@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile</title>
+    <title>ARC Engine - Profile</title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <div id="profile">
-        <div id="header" class="welcome"></div>
+    <div id="profile" class="column">
+        <div id="header" class="welcome row"></div>
         <div id="projects"></div>
         <div id="template" class="fade">
             <div class="template">
@@ -42,15 +42,6 @@
             });
         }
 
-        async function LoadProjects() {
-            let response;
-            await fetch("/profile/info", {
-                method: "GET", headers: { "Content-type": "application/json" }
-            }).then((res) => res.json()).then((res) => response = res);
-
-            DisplayProjects(response);
-        }
-
         async function CreateProject() {
             let response;
             await fetch("/new", {
@@ -61,7 +52,41 @@
                 })
             }).then((res) => res.json()).then((res) => response = res);
 
+            document.getElementById("templateName").value = "";
+            document.getElementById("templateDescription").value = "";
+
             DisplayProjects(response);
+        }
+
+        async function LoadProjects() {
+            let response;
+            await fetch("/profile/info", {
+                method: "GET", headers: { "Content-type": "application/json" }
+            }).then((res) => res.json()).then((res) => response = res);
+
+            DisplayProjects(response);
+        }
+
+        async function DeleteProject(projectID) {
+            await fetch("/delete", {
+                method: "POST", headers: { "Content-type": "application/json" },
+                body: JSON.stringify({
+                    projectID
+                })
+            });
+
+            LoadProjects();
+        }
+
+        async function PublishProject(projectID) {
+            await fetch("/publish", {
+                method: "POST", headers: { "Content-type": "application/json" },
+                body: JSON.stringify({
+                    projectID
+                })
+            });
+
+            LoadProjects();
         }
 
         function DisplayProjects(data) {
@@ -90,23 +115,53 @@
             for (let projectID in data.projects) {
                 const project = data.projects[projectID];
 
-                const element = document.createElement("a");
+                const element = document.createElement("div");
                 element.classList.add("project");
+
+                const cover = document.createElement("a");
+                cover.href = "/project/" + projectID;
+                element.appendChild(cover);
+
+                const coverImage = document.createElement("img");
+                coverImage.src = project.cover;
+                cover.appendChild(coverImage);
+
+                const bar = document.createElement("div");
+                bar.classList.add("row");
+                element.appendChild(bar);
 
                 const name = document.createElement("p");
                 name.textContent = project.name;
-                name.style.fontSize = "200%";
-                element.appendChild(name);
+                bar.appendChild(name);
 
-                const description = document.createElement("p");
-                description.textContent = project.description;
-                element.appendChild(description);
+                const publish = document.createElement("img");
+                if (project.published) {
+                    publish.src = "Resources/SaveIcon.png";
+                    publish.title = "Unpublish";
+                }
+                else {
+                    publish.src = "Resources/UploadIcon.png";
+                    publish.title = "Publish";
 
-                const cover = document.createElement("img");
-                cover.src = project.cover;
-                element.appendChild(cover);
+                }
+                publish.onclick = () => {
+                    const confirmation = project.published ? "Unpublish" : "Publish";
+                    if (confirm(`${confirmation} the project?`)) {
+                        PublishProject(projectID);
+                    }
+                }
+                bar.appendChild(publish);
 
-                element.href = "/project/" + projectID;
+                const trash = document.createElement("img");
+                trash.src = "Resources/DiscardIcon.png";
+                trash.title = "Delete";
+                trash.onclick = () => {
+                    if (confirm("Delete the project?")) {
+                        DeleteProject(projectID);
+                    }
+                }
+                bar.appendChild(trash);
+
                 projects.appendChild(element);
             }
         }

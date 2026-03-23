@@ -1,24 +1,30 @@
 * {
     /* CSS Variables */
-    /*
+    
     --primary: rgb(42, 75, 87);
     --secondary: rgb(255 148 70);
     --highlight: rgb(0, 255, 240);
-    */
     
+    /*
     --primary: rgb(36, 38, 43);
     --secondary: rgb(51, 60, 77);
     --highlight: rgb(74, 83, 101);
+    */
+
+    /*
+    --primary: rgb(31, 31, 31);
+    --secondary: rgb(70, 70, 70);
+    --highlight: rgb(160, 160, 160);
+    */
     
-    
-    --fontColor: rgb(0, 0, 0);
+    --fontColor: rgb(255, 255, 255);
     --terminalColor: rgb(20, 35, 40);
 
     padding: 0;
     margin: 0;
     box-sizing: border-box;
     justify-content: center;
-    font-family: Courier New, Courier, monospace;
+    font-family: OCR A Std, monospace;
     color: var(--fontColor);
     overflow: hidden;
 }
@@ -40,6 +46,18 @@ body {
 .button:hover {
     background-color: var(--secondary);
     border: 5px solid var(--highlight);
+}
+.row {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    box-sizing: border-box;
+}
+.column {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    box-sizing: border-box;
 }
 .fade {
     position: fixed;
@@ -93,23 +111,10 @@ body {
     background-size: 100% 100%;
     width: 100dvw;
     height: 100dvh;
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-    padding: 0;
-    margin: 0;
-    box-sizing: border-box;
-    font-family: Courier New, Courier, monospace;
 }
 .welcome {
-    color: white;
-    display: flex;
-    text-align: center;
     font-size: 200%;
-    background-color: var(--primary);
     height: 10dvh;
-    justify-content: center;
-    align-items: center;
     border-top: 5px solid var(--secondary);
     border-bottom: 5px solid var(--secondary);
 }
@@ -117,60 +122,76 @@ body {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    border-radius: 20px;
     justify-content: left;
     overflow-y: scroll;
     flex-grow: 1;
 }
 .project {
-    position: relative;
     display: flex;
+    position: relative;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     margin: 1%;
     width: 31%; height: 35dvh;
-    text-align: center;
     box-shadow: rgba(0, 0, 0, 0.5) 0px 4px 10px;
     border: 5px solid var(--secondary);
     border-radius: 20px;
-    cursor: pointer;
     text-decoration: none;
     transition: 0.2s;
 }
 .project:hover {
     box-shadow: rgba(0, 0, 0, 0.5) 0px 16px 10px;
     border-color: var(--highlight);
+}
+.project > a {
+    display: flex;
+    width: 70%; height: 70%;
+    background-color: var(--secondary);
+}
+.project > a > img {
+    width: 100%; height: 100%;
+}
+.project > div {
+    width: 100%; height: 30%;
+    gap: 2%; padding: 2%;
+    border-top: 5px solid var(--secondary);
+}
+.project > div > p {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 2%;
+    font-size: 200%;
+    border-radius: 10px;
+    flex-grow: 1;
+    height: 80%;
+}
+.project > div > img {
+    display: flex;
+    width: auto; height: 80%;
+    border-radius: 20%;
     background-color: var(--secondary);
 }
 #projectButton {
+    cursor: pointer;
     background-color: var(--secondary);
 }
 #projectButton > img {
     width: auto;
     height: 50%;
 }
-.project > p {
-    color: white;
-    background-color: rgba(0, 0, 0, 0.6);
-    padding: 2%; margin: 1%;
-    border-radius: 20px;
-    z-index: 1;
-}
-.project > img {
-    position: absolute;
-    width: 100%; height: 100%;
-    z-index: 0;
-}
 .template {
     display: flex;
     flex-direction: row;
     position: fixed;
-    width: 60dvw;
-    height: 60dvh;
+    width: 60dvw; height: 60dvh;
     align-self: center;
     justify-content: center;
     padding: 2%;
+    gap: 2%;
     border: 2px solid var(--secondary);
     border-radius: 50px;
     background-color: var(--primary);
@@ -182,13 +203,19 @@ body {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
+    gap: 2%;
 }
-#templateName {
+#fields > input {
     height: 10%;
     font-size: 200%;
     padding: 1%;
+    background-color: var(--terminalColor);
+    border-radius: 10px;
 }
-#templateDescription {
+#fields > textarea {
+    background-color: var(--terminalColor);
+    padding: 2%;
+    border-radius: 10px;
     flex-grow: 1;
 }
 #templateButton {
@@ -196,6 +223,7 @@ body {
     justify-content: center;
     align-items: center;
     font-size: 500%;
+    border-radius: 10px;
     background-color: var(--secondary);
     flex-grow: 1;
     cursor: pointer;
@@ -375,7 +403,7 @@ input[type="file"] {
     font-size: 150%;
     border-top: 1px solid var(--highlight);
     border-bottom: 1px solid var(--highlight);
-    background-color: gray;
+    background-color: var(--terminalColor);
     cursor: pointer;
 }
 .component {
@@ -414,6 +442,9 @@ input[type="file"] {
     grid-template-rows: 0fr;
     overflow: hidden;
     transition: 0.2s;
+}
+.component > div > div > input {
+    background-color: var(--terminalColor);
 }
 .componentItem {
     width: 100%;
